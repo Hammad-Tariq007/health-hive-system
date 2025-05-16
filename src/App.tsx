@@ -12,6 +12,10 @@ import Signup from "./pages/Signup";
 import Workouts from "./pages/Workouts";
 import WorkoutDetail from "./pages/WorkoutDetail";
 import Progress from "./pages/Progress";
+import Nutrition from "./pages/Nutrition";
+import Blog from "./pages/Blog";
+import Community from "./pages/Community";
+import UserDashboard from "./pages/UserDashboard";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +31,10 @@ const App = () => (
             <Route path="/workouts" element={<Workouts />} />
             <Route path="/workouts/:id" element={<WorkoutDetail />} />
             <Route path="/progress" element={<Progress />} />
+            <Route path="/nutrition" element={<Nutrition />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/community" element={<Community />} />
+            <Route path="/dashboard" element={<UserDashboard />} />
           </Route>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
