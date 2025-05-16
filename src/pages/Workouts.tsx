@@ -17,9 +17,9 @@ const Workouts = () => {
   const filteredWorkouts = workoutPlans.filter((workout) => {
     const matchesSearch = workout.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          workout.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = !categoryFilter || workout.category === categoryFilter;
-    const matchesLevel = !levelFilter || workout.level === levelFilter;
-    const matchesGoal = !goalFilter || workout.goal === goalFilter;
+    const matchesCategory = !categoryFilter || categoryFilter === "all" || workout.category === categoryFilter;
+    const matchesLevel = !levelFilter || levelFilter === "all" || workout.level === levelFilter;
+    const matchesGoal = !goalFilter || goalFilter === "all" || workout.goal === goalFilter;
     
     return matchesSearch && matchesCategory && matchesLevel && matchesGoal;
   });
@@ -57,7 +57,7 @@ const Workouts = () => {
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
+                <SelectItem value="all">All Categories</SelectItem>
                 <SelectItem value="strength">Strength</SelectItem>
                 <SelectItem value="cardio">Cardio</SelectItem>
                 <SelectItem value="hiit">HIIT</SelectItem>
@@ -71,7 +71,7 @@ const Workouts = () => {
                 <SelectValue placeholder="Level" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Levels</SelectItem>
+                <SelectItem value="all">All Levels</SelectItem>
                 <SelectItem value="beginner">Beginner</SelectItem>
                 <SelectItem value="intermediate">Intermediate</SelectItem>
                 <SelectItem value="advanced">Advanced</SelectItem>
@@ -83,7 +83,7 @@ const Workouts = () => {
                 <SelectValue placeholder="Goal" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Goals</SelectItem>
+                <SelectItem value="all">All Goals</SelectItem>
                 <SelectItem value="weightLoss">Weight Loss</SelectItem>
                 <SelectItem value="muscleGain">Muscle Gain</SelectItem>
                 <SelectItem value="endurance">Endurance</SelectItem>
