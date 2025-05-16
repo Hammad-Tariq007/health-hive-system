@@ -1,21 +1,45 @@
 
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Menu, X, User } from "lucide-react";
+import { Menu, X, User, Sun, Moon } from "lucide-react";
 import { useIsMobile } from '@/hooks/use-mobile';
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from '@/lib/utils';
 
-const Header = () => {
+interface HeaderProps {
+  scrolled?: boolean;
+}
+
+const Header = ({ scrolled = false }: HeaderProps) => {
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const location = useLocation();
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
   };
 
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+    // This is just a placeholder for theme toggle functionality
+    // In a real app, we would update the DOM class and store preference
+    document.documentElement.classList.toggle('dark');
+  };
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location.pathname]);
+
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur-sm">
+    <header 
+      className={cn(
+        "sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur-md transition-all duration-200",
+        scrolled && "shadow-md"
+      )}
+    >
       <div className="container flex h-16 items-center justify-between py-4">
         <div className="flex items-center gap-2">
           <Link to="/" className="flex items-center gap-2">
@@ -30,25 +54,29 @@ const Header = () => {
 
         {!isMobile ? (
           <nav className="flex items-center gap-6">
-            <Link to="/workouts" className="text-sm font-medium transition-colors hover:text-fitness-primary">
-              Workouts
-            </Link>
-            <Link to="/nutrition" className="text-sm font-medium transition-colors hover:text-fitness-primary">
-              Nutrition
-            </Link>
-            <Link to="/progress" className="text-sm font-medium transition-colors hover:text-fitness-primary">
-              Progress
-            </Link>
-            <Link to="/community" className="text-sm font-medium transition-colors hover:text-fitness-primary">
-              Community
-            </Link>
-            <Link to="/blog" className="text-sm font-medium transition-colors hover:text-fitness-primary">
-              Blog
-            </Link>
+            <NavLink to="/workouts">Workouts</NavLink>
+            <NavLink to="/nutrition">Nutrition</NavLink>
+            <NavLink to="/progress">Progress</NavLink>
+            <NavLink to="/community">Community</NavLink>
+            <NavLink to="/blog">Blog</NavLink>
           </nav>
         ) : null}
 
         <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={toggleDarkMode}
+            className="rounded-full"
+            aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {isDarkMode ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
+          </Button>
+          
           <Link to="/profile">
             <Button variant="ghost" size="icon" className="rounded-full">
               <User className="h-5 w-5" />
@@ -57,13 +85,17 @@ const Header = () => {
           </Link>
           
           <Link to="/login">
-            <Button variant="default" size="sm" className="hidden sm:flex">
+            <Button 
+              variant="default" 
+              size="sm" 
+              className="hidden bg-fitness-primary hover:bg-fitness-secondary sm:flex"
+            >
               Sign In
             </Button>
           </Link>
 
           {isMobile && (
-            <Button variant="ghost" size="icon" onClick={toggleMenu}>
+            <Button variant="ghost" size="icon" onClick={toggleMenu} aria-label="Menu">
               {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
           )}
@@ -71,58 +103,90 @@ const Header = () => {
       </div>
 
       {/* Mobile Menu */}
-      <div 
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-x-0 top-16 z-50 overflow-hidden bg-background/95 backdrop-blur-md border-b shadow-lg md:hidden"
+          >
+            <motion.nav 
+              className="container py-6"
+              initial="closed"
+              animate="open"
+              exit="closed"
+              variants={{
+                open: { transition: { staggerChildren: 0.05 } },
+                closed: { transition: { staggerChildren: 0.05, staggerDirection: -1 } }
+              }}
+            >
+              <div className="grid grid-flow-row auto-rows-max gap-6 text-lg">
+                <MobileNavLink to="/workouts">Workouts</MobileNavLink>
+                <MobileNavLink to="/nutrition">Nutrition</MobileNavLink>
+                <MobileNavLink to="/progress">Progress</MobileNavLink>
+                <MobileNavLink to="/community">Community</MobileNavLink>
+                <MobileNavLink to="/blog">Blog</MobileNavLink>
+                <MobileNavLink to="/login">Sign In</MobileNavLink>
+              </div>
+            </motion.nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </header>
+  );
+};
+
+interface NavLinkProps {
+  to: string;
+  children: React.ReactNode;
+}
+
+const NavLink = ({ to, children }: NavLinkProps) => {
+  const location = useLocation();
+  const isActive = location.pathname === to;
+  
+  return (
+    <Link 
+      to={to} 
+      className={cn(
+        "relative text-sm font-medium transition-colors hover:text-fitness-primary",
+        isActive ? "text-fitness-primary" : "text-foreground"
+      )}
+    >
+      {children}
+      {isActive && (
+        <motion.div
+          className="absolute -bottom-1 left-0 h-0.5 w-full bg-fitness-primary"
+          layoutId="underline"
+        />
+      )}
+    </Link>
+  );
+};
+
+const MobileNavLink = ({ to, children }: NavLinkProps) => {
+  const location = useLocation();
+  const isActive = location.pathname === to;
+  
+  return (
+    <motion.div
+      variants={{
+        open: { opacity: 1, y: 0 },
+        closed: { opacity: 0, y: -10 }
+      }}
+    >
+      <Link 
+        to={to} 
         className={cn(
-          "fixed inset-0 top-16 z-50 grid h-[calc(100vh-4rem)] grid-flow-row auto-rows-max overflow-auto bg-background p-6 pb-32 animate-in slide-in-from-top-4 md:hidden",
-          isOpen ? "block" : "hidden"
+          "flex items-center px-2 py-1 font-medium transition-colors hover:text-fitness-primary",
+          isActive ? "text-fitness-primary" : "text-foreground"
         )}
       >
-        <nav className="grid grid-flow-row auto-rows-max gap-6 text-lg">
-          <Link 
-            to="/workouts" 
-            className="flex items-center px-2 py-1 font-medium transition-colors hover:text-fitness-primary"
-            onClick={toggleMenu}
-          >
-            Workouts
-          </Link>
-          <Link 
-            to="/nutrition" 
-            className="flex items-center px-2 py-1 font-medium transition-colors hover:text-fitness-primary"
-            onClick={toggleMenu}
-          >
-            Nutrition
-          </Link>
-          <Link 
-            to="/progress" 
-            className="flex items-center px-2 py-1 font-medium transition-colors hover:text-fitness-primary"
-            onClick={toggleMenu}
-          >
-            Progress
-          </Link>
-          <Link 
-            to="/community" 
-            className="flex items-center px-2 py-1 font-medium transition-colors hover:text-fitness-primary"
-            onClick={toggleMenu}
-          >
-            Community
-          </Link>
-          <Link 
-            to="/blog" 
-            className="flex items-center px-2 py-1 font-medium transition-colors hover:text-fitness-primary"
-            onClick={toggleMenu}
-          >
-            Blog
-          </Link>
-          <Link 
-            to="/login" 
-            className="flex items-center px-2 py-1 font-medium transition-colors hover:text-fitness-primary"
-            onClick={toggleMenu}
-          >
-            Sign In
-          </Link>
-        </nav>
-      </div>
-    </header>
+        {children}
+      </Link>
+    </motion.div>
   );
 };
 
