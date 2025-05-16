@@ -70,7 +70,7 @@ const BlogPage = () => {
                     <div className="flex items-center gap-4 text-white/80 text-sm">
                       <div className="flex items-center">
                         <User className="h-3 w-3 mr-1" />
-                        {filteredPosts[0].author}
+                        {filteredPosts[0].author.name}
                       </div>
                       <div className="flex items-center">
                         <Calendar className="h-3 w-3 mr-1" />
@@ -111,7 +111,7 @@ const BlogPage = () => {
                   <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
                     <div className="flex items-center">
                       <User className="h-3 w-3 mr-1" />
-                      {post.author}
+                      {post.author.name}
                     </div>
                     <div className="flex items-center">
                       <Calendar className="h-3 w-3 mr-1" />

@@ -6,10 +6,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { FileDown, Info } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { nutritionPlans } from "@/data/nutrition";
+import { mealPlans } from "@/data/nutrition";
 
 const NutritionPage = () => {
-  const [selectedDiet, setSelectedDiet] = useState(nutritionPlans[0]);
+  const [selectedDiet, setSelectedDiet] = useState(mealPlans[0]);
 
   return (
     <div className="container py-8 animate-fade-in">
@@ -28,7 +28,7 @@ const NutritionPage = () => {
 
         <TabsContent value="all" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {nutritionPlans.map((plan) => (
+            {mealPlans.map((plan) => (
               <Card key={plan.id} className="overflow-hidden hover:shadow-lg transition-shadow group">
                 <div className="relative h-48 overflow-hidden">
                   <img 
@@ -38,7 +38,7 @@ const NutritionPage = () => {
                   />
                   <div className="absolute top-2 right-2">
                     <Badge variant="secondary" className="bg-black/70 text-white backdrop-blur-sm">
-                      {plan.category}
+                      {plan.dietType}
                     </Badge>
                   </div>
                 </div>
@@ -49,7 +49,7 @@ const NutritionPage = () => {
                 <CardContent>
                   <div className="flex flex-wrap gap-2 mb-4">
                     <Badge variant="outline" className="bg-primary/10">
-                      {plan.calories} calories
+                      {plan.totalCalories} calories
                     </Badge>
                     <Badge variant="outline" className="bg-primary/10">
                       Protein: {plan.macros.protein}g
@@ -88,7 +88,7 @@ const NutritionPage = () => {
                               <div key={index} className="border p-3 rounded-md">
                                 <h4 className="font-medium mb-2">{meal.name}</h4>
                                 <ul className="list-disc list-inside space-y-1 text-sm">
-                                  {meal.foods.map((food, idx) => (
+                                  {meal.ingredients.map((food, idx) => (
                                     <li key={idx}>{food}</li>
                                   ))}
                                 </ul>
@@ -104,7 +104,7 @@ const NutritionPage = () => {
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                             <div className="bg-muted p-3 rounded-md text-center">
                               <div className="text-sm text-muted-foreground">Calories</div>
-                              <div className="font-bold">{selectedDiet.calories}</div>
+                              <div className="font-bold">{selectedDiet.totalCalories}</div>
                             </div>
                             <div className="bg-muted p-3 rounded-md text-center">
                               <div className="text-sm text-muted-foreground">Protein</div>
@@ -135,8 +135,8 @@ const NutritionPage = () => {
 
         <TabsContent value="bulking">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {nutritionPlans
-              .filter(plan => plan.category === "Bulking")
+            {mealPlans
+              .filter(plan => plan.goal === "muscleGain")
               .map((plan) => (
                 <Card key={plan.id} className="overflow-hidden hover:shadow-lg transition-shadow group">
                   <div className="relative h-48 overflow-hidden">
@@ -147,7 +147,7 @@ const NutritionPage = () => {
                     />
                     <div className="absolute top-2 right-2">
                       <Badge variant="secondary" className="bg-black/70 text-white backdrop-blur-sm">
-                        {plan.category}
+                        {plan.dietType}
                       </Badge>
                     </div>
                   </div>
@@ -158,7 +158,7 @@ const NutritionPage = () => {
                   <CardContent>
                     <div className="flex flex-wrap gap-2 mb-4">
                       <Badge variant="outline" className="bg-primary/10">
-                        {plan.calories} calories
+                        {plan.totalCalories} calories
                       </Badge>
                       <Badge variant="outline" className="bg-primary/10">
                         Protein: {plan.macros.protein}g
@@ -188,8 +188,8 @@ const NutritionPage = () => {
 
         <TabsContent value="cutting">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {nutritionPlans
-              .filter(plan => plan.category === "Cutting")
+            {mealPlans
+              .filter(plan => plan.goal === "weightLoss")
               .map((plan) => (
                 <Card key={plan.id} className="overflow-hidden hover:shadow-lg transition-shadow group">
                   <div className="relative h-48 overflow-hidden">
@@ -200,7 +200,7 @@ const NutritionPage = () => {
                     />
                     <div className="absolute top-2 right-2">
                       <Badge variant="secondary" className="bg-black/70 text-white backdrop-blur-sm">
-                        {plan.category}
+                        {plan.dietType}
                       </Badge>
                     </div>
                   </div>
@@ -211,7 +211,7 @@ const NutritionPage = () => {
                   <CardContent>
                     <div className="flex flex-wrap gap-2 mb-4">
                       <Badge variant="outline" className="bg-primary/10">
-                        {plan.calories} calories
+                        {plan.totalCalories} calories
                       </Badge>
                       <Badge variant="outline" className="bg-primary/10">
                         Protein: {plan.macros.protein}g
@@ -241,8 +241,8 @@ const NutritionPage = () => {
 
         <TabsContent value="maintenance">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {nutritionPlans
-              .filter(plan => plan.category === "Maintenance")
+            {mealPlans
+              .filter(plan => plan.goal === "maintenance")
               .map((plan) => (
                 <Card key={plan.id} className="overflow-hidden hover:shadow-lg transition-shadow group">
                   <div className="relative h-48 overflow-hidden">
@@ -253,7 +253,7 @@ const NutritionPage = () => {
                     />
                     <div className="absolute top-2 right-2">
                       <Badge variant="secondary" className="bg-black/70 text-white backdrop-blur-sm">
-                        {plan.category}
+                        {plan.dietType}
                       </Badge>
                     </div>
                   </div>
@@ -264,7 +264,7 @@ const NutritionPage = () => {
                   <CardContent>
                     <div className="flex flex-wrap gap-2 mb-4">
                       <Badge variant="outline" className="bg-primary/10">
-                        {plan.calories} calories
+                        {plan.totalCalories} calories
                       </Badge>
                       <Badge variant="outline" className="bg-primary/10">
                         Protein: {plan.macros.protein}g
