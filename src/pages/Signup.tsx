@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,14 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-
 const Signup = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -23,21 +22,19 @@ const Signup = () => {
     setTimeout(() => {
       toast({
         title: "Account created!",
-        description: "Welcome to FitnessFreaks",
+        description: "Welcome to FitnessFreaks"
       });
       setIsLoading(false);
     }, 1500);
   };
-
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  return <div className="flex min-h-screen items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-8">
           <Link to="/" className="flex items-center gap-2">
             <div className="relative h-10 w-10 overflow-hidden rounded-full bg-fitness-primary">
               <span className="absolute inset-0 flex items-center justify-center font-heading font-bold text-white">FF</span>
             </div>
-            <span className="font-heading text-2xl font-bold tracking-tight">
+            <span className="font-heading text-2xl font-bold tracking-tight text-slate-800">
               FitnessFreaks
             </span>
           </Link>
@@ -54,36 +51,15 @@ const Signup = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="John Doe"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
+                <Input id="name" type="text" placeholder="John Doe" value={name} onChange={e => setName(e.target.value)} required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
+                <Input id="email" type="email" placeholder="m@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+                <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
                 <p className="text-xs text-gray-500">
                   Password must be at least 8 characters long and include a number and a special character.
                 </p>
@@ -103,11 +79,7 @@ const Signup = () => {
                 </Label>
               </div>
               
-              <Button 
-                type="submit" 
-                className="w-full bg-fitness-primary hover:bg-fitness-secondary" 
-                disabled={isLoading}
-              >
+              <Button type="submit" className="w-full bg-fitness-primary hover:bg-fitness-secondary" disabled={isLoading}>
                 {isLoading ? "Creating account..." : "Create account"}
               </Button>
             </form>
@@ -146,8 +118,6 @@ const Signup = () => {
           </CardFooter>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Signup;
