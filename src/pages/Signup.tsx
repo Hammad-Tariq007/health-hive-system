@@ -34,7 +34,7 @@ const Signup = () => {
             <div className="relative h-10 w-10 overflow-hidden rounded-full bg-fitness-primary">
               <span className="absolute inset-0 flex items-center justify-center font-heading font-bold text-white">FF</span>
             </div>
-            <span className="font-heading text-2xl font-bold tracking-tight text-slate-800">
+            <span className="font-heading text-2xl font-bold tracking-tight text-slate-900">
               FitnessFreaks
             </span>
           </Link>
