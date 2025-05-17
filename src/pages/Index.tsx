@@ -83,7 +83,7 @@ const Index = () => {
           <div className="flex flex-col items-center justify-center space-y-4 text-center">
             <div className="space-y-2">
               <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-slate-800">Everything You Need For Your Fitness Journey</h2>
-              <p className="max-w-[900px] md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed text-gray-800">
+              <p className="max-w-[900px] md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed text-slate-800">
                 FitnessFreaks provides all the tools and resources you need to transform your body and mind
               </p>
             </div>
@@ -146,8 +146,8 @@ const Index = () => {
       <section className="bg-gray-50 py-16">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">Popular Workout Plans</h2>
-            <p className="max-w-[900px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl text-slate-800">Popular Workout Plans</h2>
+            <p className="max-w-[900px] md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed text-slate-800">
               Discover our most popular workout plans designed by fitness experts
             </p>
           </div>
@@ -192,8 +192,8 @@ const Index = () => {
       <section className="py-16 bg-white">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">What Our Users Say</h2>
-            <p className="max-w-[900px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl text-slate-800">What Our Users Say</h2>
+            <p className="max-w-[900px] md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed text-slate-800">
               Hear from our community about their transformation stories and experiences
             </p>
           </div>
@@ -242,8 +242,8 @@ const Index = () => {
       <section className="py-16 bg-gray-50">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">Latest From Our Blog</h2>
-            <p className="max-w-[900px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl text-slate-800">Latest From Our Blog</h2>
+            <p className="max-w-[900px] md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed text-slate-800">
               Expert advice, tips, and success stories to inspire your fitness journey
             </p>
           </div>
