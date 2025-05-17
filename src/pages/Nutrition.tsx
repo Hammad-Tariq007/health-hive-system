@@ -1,15 +1,38 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { FileDown, Info } from "lucide-react";
+import { FileDown, Info, ArrowRight } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { mealPlans } from "@/data/nutrition";
+import { useNavigate } from "react-router-dom";
+
+// Placeholder image to use if an image URL is invalid
+const placeholderImage = "https://images.unsplash.com/photo-1498837167922-ddd27525d352?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80";
 
 const NutritionPage = () => {
   const [selectedDiet, setSelectedDiet] = useState(mealPlans[0]);
+  const navigate = useNavigate();
+  const [loadedImages, setLoadedImages] = useState<{[key: string]: boolean}>({});
+  
+  // Handle image error by setting its loaded state to false
+  const handleImageError = (id: string) => {
+    setLoadedImages(prev => ({
+      ...prev,
+      [id]: false
+    }));
+  };
+
+  // Initialize all images as potentially loadable
+  useEffect(() => {
+    const initialLoadState: {[key: string]: boolean} = {};
+    mealPlans.forEach(plan => {
+      initialLoadState[plan.id] = true;
+    });
+    setLoadedImages(initialLoadState);
+  }, []);
 
   return (
     <div className="container py-8 animate-fade-in">
@@ -30,11 +53,13 @@ const NutritionPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {mealPlans.map((plan) => (
               <Card key={plan.id} className="overflow-hidden hover:shadow-lg transition-shadow group">
-                <div className="relative h-48 overflow-hidden">
+                <div className="relative h-48 overflow-hidden bg-muted">
                   <img 
-                    src={plan.image} 
+                    src={loadedImages[plan.id] !== false ? plan.image : placeholderImage} 
                     alt={plan.title}
                     className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
+                    loading="lazy"
+                    onError={() => handleImageError(plan.id)}
                   />
                   <div className="absolute top-2 right-2">
                     <Badge variant="secondary" className="bg-black/70 text-white backdrop-blur-sm">
@@ -121,6 +146,17 @@ const NutritionPage = () => {
                           </div>
                         </div>
                       </div>
+                      <div className="mt-4 flex justify-end">
+                        <Button 
+                          className="bg-fitness-primary hover:bg-fitness-secondary"
+                          onClick={() => {
+                            document.querySelector('[role="dialog"] button[data-state="open"]')?.click();
+                            navigate('/dashboard');
+                          }}
+                        >
+                          Start This Plan <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </div>
                     </DialogContent>
                   </Dialog>
                   <Button>
@@ -133,17 +169,20 @@ const NutritionPage = () => {
           </div>
         </TabsContent>
 
+        {/* Bulking tab */}
         <TabsContent value="bulking">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {mealPlans
               .filter(plan => plan.goal === "muscleGain")
               .map((plan) => (
                 <Card key={plan.id} className="overflow-hidden hover:shadow-lg transition-shadow group">
-                  <div className="relative h-48 overflow-hidden">
+                  <div className="relative h-48 overflow-hidden bg-muted">
                     <img 
-                      src={plan.image} 
+                      src={loadedImages[plan.id] !== false ? plan.image : placeholderImage} 
                       alt={plan.title}
                       className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
+                      loading="lazy"
+                      onError={() => handleImageError(plan.id)}
                     />
                     <div className="absolute top-2 right-2">
                       <Badge variant="secondary" className="bg-black/70 text-white backdrop-blur-sm">
@@ -176,9 +215,9 @@ const NutritionPage = () => {
                       <Info className="h-4 w-4 mr-2" />
                       Details
                     </Button>
-                    <Button>
-                      <FileDown className="h-4 w-4 mr-2" />
-                      Download PDF
+                    <Button className="bg-fitness-primary hover:bg-fitness-secondary">
+                      <ArrowRight className="h-4 w-4 mr-2" />
+                      Start Plan
                     </Button>
                   </CardFooter>
                 </Card>
@@ -186,17 +225,20 @@ const NutritionPage = () => {
           </div>
         </TabsContent>
 
+        {/* Cutting tab */}
         <TabsContent value="cutting">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {mealPlans
               .filter(plan => plan.goal === "weightLoss")
               .map((plan) => (
                 <Card key={plan.id} className="overflow-hidden hover:shadow-lg transition-shadow group">
-                  <div className="relative h-48 overflow-hidden">
+                  <div className="relative h-48 overflow-hidden bg-muted">
                     <img 
-                      src={plan.image} 
+                      src={loadedImages[plan.id] !== false ? plan.image : placeholderImage} 
                       alt={plan.title}
                       className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
+                      loading="lazy"
+                      onError={() => handleImageError(plan.id)}
                     />
                     <div className="absolute top-2 right-2">
                       <Badge variant="secondary" className="bg-black/70 text-white backdrop-blur-sm">
@@ -229,9 +271,9 @@ const NutritionPage = () => {
                       <Info className="h-4 w-4 mr-2" />
                       Details
                     </Button>
-                    <Button>
-                      <FileDown className="h-4 w-4 mr-2" />
-                      Download PDF
+                    <Button className="bg-fitness-primary hover:bg-fitness-secondary">
+                      <ArrowRight className="h-4 w-4 mr-2" />
+                      Start Plan
                     </Button>
                   </CardFooter>
                 </Card>
@@ -239,17 +281,20 @@ const NutritionPage = () => {
           </div>
         </TabsContent>
 
+        {/* Maintenance tab */}
         <TabsContent value="maintenance">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {mealPlans
               .filter(plan => plan.goal === "maintenance")
               .map((plan) => (
                 <Card key={plan.id} className="overflow-hidden hover:shadow-lg transition-shadow group">
-                  <div className="relative h-48 overflow-hidden">
+                  <div className="relative h-48 overflow-hidden bg-muted">
                     <img 
-                      src={plan.image} 
+                      src={loadedImages[plan.id] !== false ? plan.image : placeholderImage} 
                       alt={plan.title}
                       className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
+                      loading="lazy"
+                      onError={() => handleImageError(plan.id)}
                     />
                     <div className="absolute top-2 right-2">
                       <Badge variant="secondary" className="bg-black/70 text-white backdrop-blur-sm">
@@ -282,9 +327,9 @@ const NutritionPage = () => {
                       <Info className="h-4 w-4 mr-2" />
                       Details
                     </Button>
-                    <Button>
-                      <FileDown className="h-4 w-4 mr-2" />
-                      Download PDF
+                    <Button className="bg-fitness-primary hover:bg-fitness-secondary">
+                      <ArrowRight className="h-4 w-4 mr-2" />
+                      Start Plan
                     </Button>
                   </CardFooter>
                 </Card>
@@ -293,6 +338,7 @@ const NutritionPage = () => {
         </TabsContent>
       </Tabs>
 
+      {/* Macro Calculator Section */}
       <div className="mt-12 p-6 bg-gradient-to-r from-primary/30 to-secondary/30 rounded-lg backdrop-blur-sm glass border border-white/20">
         <div className="grid md:grid-cols-2 gap-8 items-center">
           <div>
@@ -320,7 +366,13 @@ const NutritionPage = () => {
             </div>
           </div>
           <div>
-            <Button className="w-full mb-4" size="lg">Calculate Your Macros</Button>
+            <Button 
+              className="w-full mb-4" 
+              size="lg"
+              onClick={() => navigate("/bmi-calculator")}
+            >
+              Calculate Your Macros
+            </Button>
             <p className="text-center text-sm text-muted-foreground">
               Get personalized nutrition recommendations based on your body composition and fitness goals.
             </p>

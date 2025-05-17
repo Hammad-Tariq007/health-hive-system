@@ -19,6 +19,9 @@ import {
 import { workoutPlans } from "@/data/workouts";
 import { motion } from "framer-motion";
 
+// Placeholder image to use if an image URL is invalid
+const placeholderImage = "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80";
+
 const Workouts = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -27,6 +30,24 @@ const Workouts = () => {
   const [sortBy, setSortBy] = useState("popularity");
   const [sortDirection, setSortDirection] = useState("desc");
   const [isFilterVisible, setIsFilterVisible] = useState(false);
+  const [loadedImages, setLoadedImages] = useState<{[key: string]: boolean}>({});
+  
+  // Initialize all images as potentially loadable
+  useEffect(() => {
+    const initialLoadState: {[key: string]: boolean} = {};
+    workoutPlans.forEach(plan => {
+      initialLoadState[plan.id] = true;
+    });
+    setLoadedImages(initialLoadState);
+  }, []);
+  
+  // Handle image error by setting its loaded state to false
+  const handleImageError = (id: string) => {
+    setLoadedImages(prev => ({
+      ...prev,
+      [id]: false
+    }));
+  };
   
   // Filter workouts based on search and filters
   const filteredAndSortedWorkouts = [...workoutPlans]
@@ -307,11 +328,13 @@ const Workouts = () => {
           {filteredAndSortedWorkouts.map((workout) => (
             <motion.div key={workout.id} variants={itemVariants}>
               <Card className="group overflow-hidden transition-all hover:shadow-lg">
-                <div className="relative h-48 overflow-hidden">
+                <div className="relative h-48 overflow-hidden bg-muted">
                   <img
-                    src={workout.image}
+                    src={loadedImages[workout.id] !== false ? workout.image : placeholderImage}
                     alt={workout.title}
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    loading="lazy"
+                    onError={() => handleImageError(workout.id)}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
                   <div className="absolute top-2 right-2 px-2 py-1 text-xs font-medium bg-fitness-primary text-white rounded">

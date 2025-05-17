@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -132,6 +133,9 @@ const getRecommendedMeals = (category: BMICategory) => {
   return recommendedMeals.slice(0, 3);
 };
 
+// Placeholder image to use if an image URL is invalid
+const placeholderImage = "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80";
+
 const BmiCalculator = () => {
   const navigate = useNavigate();
   const [height, setHeight] = useState<string>("");
@@ -141,6 +145,24 @@ const BmiCalculator = () => {
   const [unit, setUnit] = useState<string>("metric");
   const [bmiResult, setBmiResult] = useState<BMIResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [loadedImages, setLoadedImages] = useState<{[key: string]: boolean}>({});
+  
+  // Initialize all images as potentially loadable
+  useEffect(() => {
+    const initialLoadState: {[key: string]: boolean} = {};
+    [...workoutPlans, ...mealPlans].forEach(item => {
+      initialLoadState[item.id] = true;
+    });
+    setLoadedImages(initialLoadState);
+  }, []);
+  
+  // Handle image error by setting its loaded state to false
+  const handleImageError = (id: string) => {
+    setLoadedImages(prev => ({
+      ...prev,
+      [id]: false
+    }));
+  };
   
   // Convert height and weight based on selected units
   const getMetricValues = () => {
@@ -441,28 +463,39 @@ const BmiCalculator = () => {
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                           {bmiResult.recommendedWorkouts.map((workout) => (
-                            <Card key={workout.id} className="overflow-hidden hover:shadow-md transition-all duration-300">
-                              <div className="h-32 overflow-hidden">
-                                <img 
-                                  src={workout.image} 
-                                  alt={workout.title} 
-                                  className="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
-                                />
-                              </div>
-                              <CardContent className="p-3">
-                                <h4 className="font-semibold truncate">{workout.title}</h4>
-                                <p className="text-xs text-muted-foreground">
-                                  {workout.level} • {workout.duration} min
-                                </p>
-                                <Button 
-                                  variant="link" 
-                                  className="p-0 h-auto text-fitness-primary"
-                                  onClick={() => navigate(`/workouts/${workout.id}`)}
-                                >
-                                  View Details <ChevronRight className="h-3 w-3 ml-1" />
-                                </Button>
-                              </CardContent>
-                            </Card>
+                            <motion.div 
+                              key={workout.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.3, delay: 0.2 }}
+                            >
+                              <Card className="overflow-hidden hover:shadow-md transition-all duration-300 h-full flex flex-col">
+                                <div className="h-32 overflow-hidden bg-muted">
+                                  <img 
+                                    src={loadedImages[workout.id] !== false ? workout.image : placeholderImage} 
+                                    alt={workout.title} 
+                                    className="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
+                                    loading="lazy"
+                                    onError={() => handleImageError(workout.id)}
+                                  />
+                                </div>
+                                <CardContent className="p-3 flex-grow">
+                                  <h4 className="font-semibold truncate">{workout.title}</h4>
+                                  <p className="text-xs text-muted-foreground">
+                                    {workout.level} • {workout.duration} min
+                                  </p>
+                                </CardContent>
+                                <div className="p-3 pt-0">
+                                  <Button 
+                                    className="w-full bg-fitness-primary hover:bg-fitness-secondary text-white"
+                                    onClick={() => navigate(`/workouts/${workout.id}`)}
+                                    size="sm"
+                                  >
+                                    Start This Plan <ArrowRight className="h-3 w-3 ml-1" />
+                                  </Button>
+                                </div>
+                              </Card>
+                            </motion.div>
                           ))}
                         </div>
                       </div>
@@ -475,29 +508,40 @@ const BmiCalculator = () => {
                           Recommended Meal Plans
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                          {bmiResult.recommendedMeals.map((meal) => (
-                            <Card key={meal.id} className="overflow-hidden hover:shadow-md transition-all duration-300">
-                              <div className="h-32 overflow-hidden">
-                                <img 
-                                  src={meal.image} 
-                                  alt={meal.title} 
-                                  className="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
-                                />
-                              </div>
-                              <CardContent className="p-3">
-                                <h4 className="font-semibold truncate">{meal.title}</h4>
-                                <p className="text-xs text-muted-foreground">
-                                  {meal.dietType} • {meal.goal}
-                                </p>
-                                <Button 
-                                  variant="link" 
-                                  className="p-0 h-auto text-fitness-primary"
-                                  onClick={() => navigate(`/nutrition`)}
-                                >
-                                  View Details <ChevronRight className="h-3 w-3 ml-1" />
-                                </Button>
-                              </CardContent>
-                            </Card>
+                          {bmiResult.recommendedMeals.map((meal, idx) => (
+                            <motion.div 
+                              key={meal.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.3, delay: 0.2 + idx * 0.1 }}
+                            >
+                              <Card className="overflow-hidden hover:shadow-md transition-all duration-300 h-full flex flex-col">
+                                <div className="h-32 overflow-hidden bg-muted">
+                                  <img 
+                                    src={loadedImages[meal.id] !== false ? meal.image : placeholderImage}
+                                    alt={meal.title} 
+                                    className="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
+                                    loading="lazy"
+                                    onError={() => handleImageError(meal.id)}
+                                  />
+                                </div>
+                                <CardContent className="p-3 flex-grow">
+                                  <h4 className="font-semibold truncate">{meal.title}</h4>
+                                  <p className="text-xs text-muted-foreground">
+                                    {meal.dietType} • {meal.goal}
+                                  </p>
+                                </CardContent>
+                                <div className="p-3 pt-0">
+                                  <Button 
+                                    className="w-full bg-fitness-primary hover:bg-fitness-secondary text-white"
+                                    onClick={() => navigate(`/nutrition`)}
+                                    size="sm"
+                                  >
+                                    Start This Plan <ArrowRight className="h-3 w-3 ml-1" />
+                                  </Button>
+                                </div>
+                              </Card>
+                            </motion.div>
                           ))}
                         </div>
                       </div>
