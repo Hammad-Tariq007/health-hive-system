@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -234,7 +233,7 @@ const BmiCalculator = () => {
         <div className="relative">
           <Input
             id="height"
-            placeholder='Height (e.g. 5\'10")'
+            placeholder="Height (e.g. 5'10&quot;)"
             value={height}
             onChange={(e) => setHeight(e.target.value)}
             onKeyDown={handleKeyPress}
@@ -242,7 +241,7 @@ const BmiCalculator = () => {
             required
           />
           <p className="mt-1 text-xs text-muted-foreground">
-            Format: feet'inches" (e.g. 5'10")
+            Format: feet&apos;inches&quot; (e.g. 5&apos;10&quot;)
           </p>
         </div>
       );
