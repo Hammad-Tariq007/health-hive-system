@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,13 +5,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -21,21 +20,19 @@ const Login = () => {
     setTimeout(() => {
       toast({
         title: "Login successful!",
-        description: "Welcome back to FitnessFreaks",
+        description: "Welcome back to FitnessFreaks"
       });
       setIsLoading(false);
     }, 1500);
   };
-
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  return <div className="flex min-h-screen items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-8">
           <Link to="/" className="flex items-center gap-2">
             <div className="relative h-10 w-10 overflow-hidden rounded-full bg-fitness-primary">
               <span className="absolute inset-0 flex items-center justify-center font-heading font-bold text-white">FF</span>
             </div>
-            <span className="font-heading text-2xl font-bold tracking-tight">
+            <span className="font-heading text-2xl font-bold tracking-tight text-slate-800">
               FitnessFreaks
             </span>
           </Link>
@@ -52,14 +49,7 @@ const Login = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
+                <Input id="email" type="email" placeholder="m@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -68,20 +58,9 @@ const Login = () => {
                     Forgot password?
                   </Link>
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+                <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
               </div>
-              <Button 
-                type="submit" 
-                className="w-full bg-fitness-primary hover:bg-fitness-secondary" 
-                disabled={isLoading}
-              >
+              <Button type="submit" className="w-full bg-fitness-primary hover:bg-fitness-secondary" disabled={isLoading}>
                 {isLoading ? "Signing in..." : "Sign in"}
               </Button>
             </form>
@@ -120,8 +99,6 @@ const Login = () => {
           </CardFooter>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Login;
