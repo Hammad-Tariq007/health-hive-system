@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./components/layout/Layout";
+import ScrollToTop from "./components/utils/ScrollToTop";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
@@ -17,6 +18,8 @@ import Blog from "./pages/Blog";
 import Community from "./pages/Community";
 import UserDashboard from "./pages/UserDashboard";
 import Profile from "./pages/Profile";
+import EditProfile from "./pages/EditProfile";
+import BmiCalculator from "./pages/BmiCalculator";
 
 // Import all the new pages
 import AboutUs from "./pages/AboutUs";
@@ -38,6 +41,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <ScrollToTop />
         <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<Index />} />
@@ -49,6 +53,8 @@ const App = () => (
             <Route path="/community" element={<Community />} />
             <Route path="/dashboard" element={<UserDashboard />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/edit-profile" element={<EditProfile />} />
+            <Route path="/bmi-calculator" element={<BmiCalculator />} />
             
             {/* Company Pages */}
             <Route path="/about" element={<AboutUs />} />

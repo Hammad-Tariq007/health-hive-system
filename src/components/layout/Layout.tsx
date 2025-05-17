@@ -1,13 +1,15 @@
 
 import { useState, useEffect } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Header from "./Header";
 import Footer from "./Footer";
 
 const Layout = () => {
   const [scrolled, setScrolled] = useState(false);
+  const location = useLocation();
   
+  // Effect for scroll detection
   useEffect(() => {
     const handleScroll = () => {
       const isScrolled = window.scrollY > 20;
@@ -23,11 +25,17 @@ const Layout = () => {
     };
   }, [scrolled]);
 
+  // Effect for automatic scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header scrolled={scrolled} />
       <AnimatePresence mode="wait">
         <motion.main 
+          key={location.pathname}
           className="flex-1"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

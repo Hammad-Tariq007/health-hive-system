@@ -1,3 +1,4 @@
+
 export interface Exercise {
   id: string;
   name: string;
@@ -14,8 +15,8 @@ export interface WorkoutPlan {
   description: string;
   level: "beginner" | "intermediate" | "advanced";
   duration: number; // in minutes
-  category: "strength" | "cardio" | "hiit" | "flexibility" | "fullBody";
-  goal: "weightLoss" | "muscleGain" | "endurance" | "toning" | "general";
+  category: "strength" | "cardio" | "hiit" | "flexibility" | "fullBody" | "yoga" | "pilates" | "calisthenics";
+  goal: "weightLoss" | "muscleGain" | "endurance" | "toning" | "general" | "mobility" | "recovery";
   image: string;
   exercises: Exercise[];
   createdBy: string;
@@ -219,8 +220,8 @@ export const workoutPlans: WorkoutPlan[] = [
     description: "A holistic yoga routine focused on improving flexibility, balance, and mental clarity through mindful movement.",
     level: "beginner",
     duration: 40,
-    category: "flexibility",
-    goal: "general",
+    category: "yoga",
+    goal: "mobility",
     image: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=1470&auto=format&fit=crop",
     exercises: [
       {
@@ -416,5 +417,604 @@ export const workoutPlans: WorkoutPlan[] = [
     createdBy: "Strength Coach Marcus",
     rating: 4.9,
     reviews: 152
+  },
+  {
+    id: "9",
+    title: "HIIT Metabolic Booster",
+    description: "A fast-paced, high-intensity interval training workout designed to maximize calorie burn and boost metabolism for hours after training.",
+    level: "intermediate",
+    duration: 25,
+    category: "hiit",
+    goal: "weightLoss",
+    image: "https://images.unsplash.com/photo-1434682881908-b43d0467b798?q=80&w=1474&auto=format&fit=crop",
+    exercises: [
+      {
+        id: "9-1",
+        name: "Jumping Jacks",
+        description: "Full body cardio movement that elevates heart rate and warms up the entire body.",
+        sets: 4,
+        reps: "40 seconds work, 20 seconds rest",
+        restTime: 0
+      },
+      {
+        id: "9-2",
+        name: "Speed Squats",
+        description: "Fast-paced bodyweight squats to build leg endurance and burn calories.",
+        sets: 4,
+        reps: "40 seconds work, 20 seconds rest",
+        restTime: 0
+      },
+      {
+        id: "9-3",
+        name: "Mountain Climbers",
+        description: "Dynamic core exercise that also elevates heart rate and engages multiple muscle groups.",
+        sets: 4,
+        reps: "40 seconds work, 20 seconds rest",
+        restTime: 0
+      },
+      {
+        id: "9-4",
+        name: "Push-up to Side Plank",
+        description: "Combination move that works chest, triceps, shoulders, and obliques.",
+        sets: 4,
+        reps: "40 seconds work, 20 seconds rest",
+        restTime: 0
+      },
+      {
+        id: "9-5",
+        name: "Burpees",
+        description: "Full-body exercise that combines a squat, push-up, and jump for maximum calorie burn.",
+        sets: 4,
+        reps: "40 seconds work, 20 seconds rest",
+        restTime: 60
+      }
+    ],
+    createdBy: "HIIT Specialist Jennifer",
+    rating: 4.8,
+    reviews: 312
+  },
+  {
+    id: "10",
+    title: "Bodyweight Mastery",
+    description: "A comprehensive calisthenics program focusing on building strength and control using only your bodyweight.",
+    level: "intermediate",
+    duration: 45,
+    category: "calisthenics",
+    goal: "toning",
+    image: "https://images.unsplash.com/photo-1594737625785-a6cbdabd333c?q=80&w=1470&auto=format&fit=crop",
+    exercises: [
+      {
+        id: "10-1",
+        name: "Pike Push-ups",
+        description: "A vertical pushing movement that targets the shoulders and upper chest.",
+        sets: 3,
+        reps: "10-15",
+        restTime: 60
+      },
+      {
+        id: "10-2",
+        name: "Pull-up Progressions",
+        description: "Various pull-up variations based on your current strength level.",
+        sets: 3,
+        reps: "5-10",
+        restTime: 60
+      },
+      {
+        id: "10-3",
+        name: "Pistol Squat Progressions",
+        description: "Single-leg squat variations to build lower body strength and balance.",
+        sets: 3,
+        reps: "5-8 per leg",
+        restTime: 60
+      },
+      {
+        id: "10-4",
+        name: "L-Sit Progressions",
+        description: "Core and hip flexor exercise that builds strength for advanced calisthenics movements.",
+        sets: 3,
+        reps: "10-30 seconds",
+        restTime: 60
+      },
+      {
+        id: "10-5",
+        name: "Handstand Practice",
+        description: "Drills to develop balance, strength, and comfort being inverted.",
+        sets: 3,
+        reps: "30-60 seconds",
+        restTime: 60
+      }
+    ],
+    createdBy: "Calisthenics Expert David",
+    rating: 4.7,
+    reviews: 189
+  },
+  {
+    id: "11",
+    title: "Pilates Core & Posture",
+    description: "A focused Pilates routine designed to strengthen the core, improve posture, and increase body awareness and control.",
+    level: "beginner",
+    duration: 35,
+    category: "pilates",
+    goal: "toning",
+    image: "https://images.unsplash.com/photo-1518611012118-696072aa579a?q=80&w=1470&auto=format&fit=crop",
+    exercises: [
+      {
+        id: "11-1",
+        name: "The Hundred",
+        description: "Classic Pilates warm-up that engages the core and increases circulation.",
+        sets: 1,
+        reps: "100 pumps (10 sets of 10)",
+        restTime: 30
+      },
+      {
+        id: "11-2",
+        name: "Roll-ups",
+        description: "Controlled movement that strengthens the abdominals and improves spinal articulation.",
+        sets: 1,
+        reps: "10",
+        restTime: 30
+      },
+      {
+        id: "11-3",
+        name: "Single Leg Circles",
+        description: "Hip mobility exercise that also engages the core and improves stability.",
+        sets: 1,
+        reps: "10 in each direction, each leg",
+        restTime: 30
+      },
+      {
+        id: "11-4",
+        name: "Spine Stretch Forward",
+        description: "Flexibility movement that stretches the back muscles and hamstrings.",
+        sets: 1,
+        reps: "8",
+        restTime: 30
+      },
+      {
+        id: "11-5",
+        name: "The Saw",
+        description: "Rotation exercise that improves spine mobility and stretches the hamstrings.",
+        sets: 1,
+        reps: "6 each side",
+        restTime: 30
+      },
+      {
+        id: "11-6",
+        name: "The Swan",
+        description: "Back extension to strengthen posterior chain and counteract forward-leaning posture.",
+        sets: 1,
+        reps: "8",
+        restTime: 30
+      }
+    ],
+    createdBy: "Pilates Instructor Rebecca",
+    rating: 4.9,
+    reviews: 245
+  },
+  {
+    id: "12",
+    title: "Active Recovery Day",
+    description: "A gentle workout designed to promote blood flow, reduce muscle soreness, and aid recovery between intense training sessions.",
+    level: "beginner",
+    duration: 30,
+    category: "flexibility",
+    goal: "recovery",
+    image: "https://images.unsplash.com/photo-1571566882372-1598d88abd90?q=80&w=1374&auto=format&fit=crop",
+    exercises: [
+      {
+        id: "12-1",
+        name: "Foam Rolling Sequence",
+        description: "Self-myofascial release for major muscle groups to reduce tension and improve mobility.",
+        sets: 1,
+        reps: "1-2 minutes per area",
+        restTime: 0
+      },
+      {
+        id: "12-2",
+        name: "Dynamic Joint Mobility",
+        description: "Gentle movements through full range of motion for major joints.",
+        sets: 1,
+        reps: "10 repetitions per joint",
+        restTime: 0
+      },
+      {
+        id: "12-3",
+        name: "Light Cardio",
+        description: "Easy walking or cycling to increase blood flow without creating additional fatigue.",
+        sets: 1,
+        reps: "10 minutes",
+        restTime: 0
+      },
+      {
+        id: "12-4",
+        name: "Static Stretching",
+        description: "Gentle, prolonged stretches for major muscle groups.",
+        sets: 1,
+        reps: "30 seconds per stretch",
+        restTime: 0
+      },
+      {
+        id: "12-5",
+        name: "Deep Breathing",
+        description: "Focused breathing exercises to promote relaxation and recovery.",
+        sets: 1,
+        reps: "5 minutes",
+        restTime: 0
+      }
+    ],
+    createdBy: "Recovery Specialist Mark",
+    rating: 4.6,
+    reviews: 172
+  },
+  {
+    id: "13",
+    title: "Functional Fitness Circuit",
+    description: "A circuit-style workout focusing on movement patterns used in everyday life to improve overall functional fitness and movement quality.",
+    level: "intermediate",
+    duration: 45,
+    category: "fullBody",
+    goal: "general",
+    image: "https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=1469&auto=format&fit=crop",
+    exercises: [
+      {
+        id: "13-1",
+        name: "Goblet Squats",
+        description: "Squat variation that improves hip mobility, core stability, and lower body strength.",
+        sets: 3,
+        reps: "12-15",
+        restTime: 30
+      },
+      {
+        id: "13-2",
+        name: "Renegade Rows",
+        description: "Combination plank and rowing movement that builds core stability and upper body pulling strength.",
+        sets: 3,
+        reps: "10 each arm",
+        restTime: 30
+      },
+      {
+        id: "13-3",
+        name: "Kettlebell Swings",
+        description: "Dynamic hip hinge pattern that develops posterior chain power and cardiovascular fitness.",
+        sets: 3,
+        reps: "20",
+        restTime: 30
+      },
+      {
+        id: "13-4",
+        name: "Turkish Get-ups",
+        description: "Multi-joint movement that improves total body coordination, stability, and mobility.",
+        sets: 3,
+        reps: "5 each side",
+        restTime: 30
+      },
+      {
+        id: "13-5",
+        name: "Farmer's Carries",
+        description: "Loaded walking exercise that builds grip strength, core stability, and overall work capacity.",
+        sets: 3,
+        reps: "40 yards",
+        restTime: 45
+      }
+    ],
+    createdBy: "Functional Training Coach Sam",
+    rating: 4.7,
+    reviews: 208
+  },
+  {
+    id: "14",
+    title: "Strength-Cardio Fusion",
+    description: "A hybrid workout that combines strength training and cardiovascular conditioning for a time-efficient, full-body training session.",
+    level: "intermediate",
+    duration: 50,
+    category: "fullBody",
+    goal: "weightLoss",
+    image: "https://images.unsplash.com/photo-1549060279-7e168fcee0c2?q=80&w=1470&auto=format&fit=crop",
+    exercises: [
+      {
+        id: "14-1",
+        name: "Dumbbell Thrusters",
+        description: "Combination squat and overhead press that elevates heart rate while building strength.",
+        sets: 3,
+        reps: "15",
+        restTime: 30
+      },
+      {
+        id: "14-2",
+        name: "Kettlebell Swings",
+        description: "Explosive hip hinge movement that builds power and endurance simultaneously.",
+        sets: 3,
+        reps: "20",
+        restTime: 30
+      },
+      {
+        id: "14-3",
+        name: "Dumbbell Renegade Rows",
+        description: "Plank position row that combines core stability with upper body pulling strength.",
+        sets: 3,
+        reps: "12 each arm",
+        restTime: 30
+      },
+      {
+        id: "14-4",
+        name: "Battle Rope Slams",
+        description: "High-intensity rope exercise that builds upper body power and cardiovascular fitness.",
+        sets: 3,
+        reps: "30 seconds",
+        restTime: 30
+      },
+      {
+        id: "14-5",
+        name: "Box Jumps",
+        description: "Plyometric lower body exercise that builds explosive power and cardiovascular fitness.",
+        sets: 3,
+        reps: "12",
+        restTime: 30
+      },
+      {
+        id: "14-6",
+        name: "Medicine Ball Slams",
+        description: "Full-body exercise that builds power and conditions the cardiovascular system.",
+        sets: 3,
+        reps: "15",
+        restTime: 30
+      }
+    ],
+    createdBy: "Conditioning Coach Nathan",
+    rating: 4.8,
+    reviews: 235
+  },
+  {
+    id: "15",
+    title: "Mobility Flow Sequence",
+    description: "A movement-based routine focused on improving joint mobility, tissue quality, and movement efficiency for better performance and reduced injury risk.",
+    level: "beginner",
+    duration: 25,
+    category: "flexibility",
+    goal: "mobility",
+    image: "https://images.unsplash.com/photo-1552196563-55cd4e45efb3?q=80&w=1526&auto=format&fit=crop",
+    exercises: [
+      {
+        id: "15-1",
+        name: "Cat-Cow Flow",
+        description: "Spinal mobility exercise that moves between flexion and extension to improve back health.",
+        sets: 1,
+        reps: "10 cycles",
+        restTime: 0
+      },
+      {
+        id: "15-2",
+        name: "World's Greatest Stretch",
+        description: "Multi-joint mobility sequence that addresses hips, thoracic spine, and shoulders.",
+        sets: 1,
+        reps: "5 per side",
+        restTime: 0
+      },
+      {
+        id: "15-3",
+        name: "Hip 90/90 Switches",
+        description: "Dynamic hip mobility exercise that addresses internal and external rotation.",
+        sets: 1,
+        reps: "10 each side",
+        restTime: 0
+      },
+      {
+        id: "15-4",
+        name: "Thoracic Bridges",
+        description: "Upper back mobility exercise that improves thoracic extension and shoulder function.",
+        sets: 1,
+        reps: "8 each side",
+        restTime: 0
+      },
+      {
+        id: "15-5",
+        name: "Shoulder CARs",
+        description: "Controlled Articular Rotations for the shoulder joint to improve mobility and motor control.",
+        sets: 1,
+        reps: "5 each direction",
+        restTime: 0
+      },
+      {
+        id: "15-6",
+        name: "Deep Squat to Stand",
+        description: "Movement sequence that addresses ankle, knee, hip, and spinal mobility.",
+        sets: 1,
+        reps: "10",
+        restTime: 0
+      }
+    ],
+    createdBy: "Mobility Specialist Grace",
+    rating: 4.9,
+    reviews: 185
+  },
+  {
+    id: "16",
+    title: "Advanced Yoga Challenge",
+    description: "A dynamic yoga sequence designed for experienced practitioners looking to deepen their practice with more challenging poses and transitions.",
+    level: "advanced",
+    duration: 60,
+    category: "yoga",
+    goal: "mobility",
+    image: "https://images.unsplash.com/photo-1588286840104-8457e3263156?q=80&w=1470&auto=format&fit=crop",
+    exercises: [
+      {
+        id: "16-1",
+        name: "Advanced Sun Salutations",
+        description: "Dynamic flowing sequence with added challenging variations to build heat and prepare the body.",
+        sets: 1,
+        reps: "5 full cycles",
+        restTime: 0
+      },
+      {
+        id: "16-2",
+        name: "Arm Balances Sequence",
+        description: "Series of challenging arm balances including crow, side crow, and eight-angle pose.",
+        sets: 1,
+        reps: "30-60 seconds each",
+        restTime: 30
+      },
+      {
+        id: "16-3",
+        name: "Inversions Practice",
+        description: "Headstand, forearm stand, and handstand variations with transitions.",
+        sets: 1,
+        reps: "1-3 minutes each",
+        restTime: 30
+      },
+      {
+        id: "16-4",
+        name: "Advanced Backbends",
+        description: "Wheel pose variations, one-legged wheel, and scorpion pose progressions.",
+        sets: 1,
+        reps: "30-60 seconds each",
+        restTime: 30
+      },
+      {
+        id: "16-5",
+        name: "Deep Hip Openers",
+        description: "Advanced hip opening postures including lotus variations and splits.",
+        sets: 1,
+        reps: "1-2 minutes each",
+        restTime: 30
+      },
+      {
+        id: "16-6",
+        name: "Meditation and Pranayama",
+        description: "Advanced breathing techniques and seated meditation to conclude the practice.",
+        sets: 1,
+        reps: "10 minutes",
+        restTime: 0
+      }
+    ],
+    createdBy: "Advanced Yoga Teacher Amelia",
+    rating: 4.8,
+    reviews: 156
+  },
+  {
+    id: "17",
+    title: "High-Volume Chest Specialization",
+    description: "An intensive chest-focused workout designed to maximize muscle growth and strength through multiple angles and rep ranges.",
+    level: "advanced",
+    duration: 65,
+    category: "strength",
+    goal: "muscleGain",
+    image: "https://images.unsplash.com/photo-1532029837206-abbe2b7620e3?q=80&w=1470&auto=format&fit=crop",
+    exercises: [
+      {
+        id: "17-1",
+        name: "Incline Bench Press",
+        description: "Upper chest-focused pressing movement with barbells for strength development.",
+        sets: 4,
+        reps: "8-10",
+        restTime: 90
+      },
+      {
+        id: "17-2",
+        name: "Flat Dumbbell Press",
+        description: "Mid-chest development with dumbbells for better range of motion and symmetry.",
+        sets: 4,
+        reps: "10-12",
+        restTime: 75
+      },
+      {
+        id: "17-3",
+        name: "Weighted Dips",
+        description: "Lower chest and tricep compound movement with added resistance for strength.",
+        sets: 3,
+        reps: "8-12",
+        restTime: 75
+      },
+      {
+        id: "17-4",
+        name: "Cable Flyes (High to Low)",
+        description: "Isolation movement targeting the upper chest with constant tension.",
+        sets: 3,
+        reps: "12-15",
+        restTime: 60
+      },
+      {
+        id: "17-5",
+        name: "Cable Flyes (Low to High)",
+        description: "Isolation movement targeting the lower chest fibers with constant tension.",
+        sets: 3,
+        reps: "12-15",
+        restTime: 60
+      },
+      {
+        id: "17-6",
+        name: "Push-Up Variations",
+        description: "Bodyweight finisher with multiple variations to completely fatigue the chest muscles.",
+        sets: 2,
+        reps: "To failure",
+        restTime: 60
+      }
+    ],
+    createdBy: "Hypertrophy Specialist Jake",
+    rating: 4.7,
+    reviews: 198
+  },
+  {
+    id: "18",
+    title: "Outdoor Bootcamp Challenge",
+    description: "A high-energy outdoor workout combining bodyweight exercises, running, and natural obstacle challenges for a fun and effective full-body workout.",
+    level: "intermediate",
+    duration: 50,
+    category: "hiit",
+    goal: "endurance",
+    image: "https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?q=80&w=1470&auto=format&fit=crop",
+    exercises: [
+      {
+        id: "18-1",
+        name: "Sprint Intervals",
+        description: "Short distance sprinting with recovery walks to build explosive power and cardiovascular fitness.",
+        sets: 6,
+        reps: "30 seconds sprint, 60 seconds walk",
+        restTime: 0
+      },
+      {
+        id: "18-2",
+        name: "Park Bench Step-ups",
+        description: "Using a park bench for step-ups to build lower body strength and endurance.",
+        sets: 3,
+        reps: "15 each leg",
+        restTime: 30
+      },
+      {
+        id: "18-3",
+        name: "Pull-ups on Tree Branch/Park Bar",
+        description: "Upper body pulling movement using available outdoor structures.",
+        sets: 3,
+        reps: "Max effort",
+        restTime: 60
+      },
+      {
+        id: "18-4",
+        name: "Hill Sprints",
+        description: "Explosive uphill running to build power in the lower body and cardiovascular system.",
+        sets: 5,
+        reps: "20-30 seconds",
+        restTime: 90
+      },
+      {
+        id: "18-5",
+        name: "Bodyweight Circuit",
+        description: "Sequence of push-ups, squats, lunges, and core exercises with minimal rest.",
+        sets: 3,
+        reps: "45 seconds each exercise",
+        restTime: 15
+      },
+      {
+        id: "18-6",
+        name: "Agility Drills",
+        description: "Cone drills, lateral movements, and direction changes to improve coordination and agility.",
+        sets: 2,
+        reps: "60 seconds each drill",
+        restTime: 30
+      }
+    ],
+    createdBy: "Outdoor Fitness Coach Zack",
+    rating: 4.8,
+    reviews: 267
   }
 ];
+

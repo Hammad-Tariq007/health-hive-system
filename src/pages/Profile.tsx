@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,7 +15,8 @@ import {
   Apple, 
   HeartPulse, 
   Settings, 
-  Edit
+  Edit,
+  Calculator
 } from "lucide-react";
 
 const Profile = () => {
@@ -37,13 +39,15 @@ const Profile = () => {
                     <AvatarImage src="https://images.unsplash.com/photo-1607990281513-2c110a25bd8c?q=80&w=1634&auto=format&fit=crop" />
                     <AvatarFallback>JD</AvatarFallback>
                   </Avatar>
-                  <Button 
-                    size="icon" 
-                    variant="outline" 
-                    className="absolute bottom-0 right-0 rounded-full bg-background"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
+                  <Link to="/edit-profile">
+                    <Button 
+                      size="icon" 
+                      variant="outline" 
+                      className="absolute bottom-0 right-0 rounded-full bg-background"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </Link>
                 </div>
                 
                 <h2 className="mt-4 text-2xl font-bold">Jane Doe</h2>
@@ -66,9 +70,20 @@ const Profile = () => {
                   </div>
                 </div>
                 
-                <Button variant="default" className="mt-6 w-full bg-fitness-primary hover:bg-fitness-secondary">
-                  Edit Profile
-                </Button>
+                <Link to="/edit-profile" className="mt-6 w-full">
+                  <Button variant="default" className="w-full bg-fitness-primary hover:bg-fitness-secondary">
+                    Edit Profile
+                  </Button>
+                </Link>
+                
+                <div className="mt-4 w-full">
+                  <Link to="/bmi-calculator" className="w-full">
+                    <Button variant="outline" className="w-full border-fitness-primary text-fitness-primary hover:bg-fitness-primary/10">
+                      <Calculator className="mr-2 h-4 w-4" />
+                      BMI Calculator
+                    </Button>
+                  </Link>
+                </div>
               </CardContent>
             </Card>
             
@@ -235,6 +250,22 @@ const Profile = () => {
                         <div className="text-right">
                           <p className="font-medium">Friday</p>
                           <p className="text-sm text-muted-foreground">12:00 PM</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between rounded-lg border p-3">
+                        <div className="flex items-center gap-3">
+                          <div className="rounded-full bg-blue-500 p-2">
+                            <Calculator className="h-4 w-4 text-white" />
+                          </div>
+                          <div>
+                            <p className="font-medium">BMI Assessment</p>
+                            <p className="text-sm text-muted-foreground">Monthly health check</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">Sunday</p>
+                          <p className="text-sm text-muted-foreground">9:00 AM</p>
                         </div>
                       </div>
                     </div>
