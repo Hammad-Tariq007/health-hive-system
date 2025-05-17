@@ -1,25 +1,17 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { workoutPlans } from "@/data/workouts";
 import { blogPosts } from "@/data/blog";
-
 const Index = () => {
   // Take only the first 3 workout plans and blog posts for the homepage
   const featuredWorkouts = workoutPlans.slice(0, 3);
   const featuredPosts = blogPosts.slice(0, 3);
-
-  return (
-    <div className="flex flex-col min-h-screen">
+  return <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-fitness-dark py-20 md:py-32">
         <div className="absolute inset-0 z-0">
-          <img
-            src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=1470&auto=format&fit=crop"
-            alt="Hero Background"
-            className="w-full h-full object-cover opacity-20"
-          />
+          <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=1470&auto=format&fit=crop" alt="Hero Background" className="w-full h-full object-cover opacity-20" />
           <div className="absolute inset-0 bg-gradient-to-r from-fitness-dark via-fitness-dark/90 to-fitness-dark/70"></div>
         </div>
         
@@ -48,36 +40,14 @@ const Index = () => {
               </div>
               <div className="flex items-center space-x-4 text-sm text-gray-400">
                 <div className="flex items-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="mr-1 h-4 w-4 text-fitness-primary"
-                  >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1 h-4 w-4 text-fitness-primary">
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                     <polyline points="22 4 12 14.01 9 11.01"></polyline>
                   </svg>
                   <span>Free 7-day trial</span>
                 </div>
                 <div className="flex items-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="mr-1 h-4 w-4 text-fitness-primary"
-                  >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1 h-4 w-4 text-fitness-primary">
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                     <polyline points="22 4 12 14.01 9 11.01"></polyline>
                   </svg>
@@ -89,15 +59,12 @@ const Index = () => {
               <div className="glass p-4 rounded-xl w-full max-w-md">
                 <div className="grid gap-4 text-center">
                   <div className="space-y-2">
-                    <h2 className="text-2xl font-bold text-white">Join 10,000+ fitness enthusiasts</h2>
+                    <h2 className="font-bold text-[v] text-violet-500">Join 10,000+ fitness enthusiasts</h2>
                     <p className="text-gray-300">Sign up today and get access to all our features</p>
                   </div>
                   <form className="space-y-3">
                     <div className="grid gap-2">
-                      <input className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                        placeholder="Enter your email"
-                        type="email"
-                      />
+                      <input className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50" placeholder="Enter your email" type="email" />
                     </div>
                     <Button type="submit" className="w-full bg-fitness-primary hover:bg-fitness-secondary">
                       Get Started
@@ -124,18 +91,7 @@ const Index = () => {
           <div className="grid grid-cols-1 gap-8 mt-12 md:grid-cols-3">
             <div className="flex flex-col items-center space-y-2 border rounded-lg p-6 bg-accent">
               <div className="p-3 rounded-full bg-fitness-primary/10">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-6 w-6 text-fitness-primary"
-                >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-fitness-primary">
                   <path d="m18 20 4-4-4-4"></path>
                   <path d="m6 4-4 4 4 4"></path>
                   <path d="m14 4 4 4-4 4"></path>
@@ -149,18 +105,7 @@ const Index = () => {
             </div>
             <div className="flex flex-col items-center space-y-2 border rounded-lg p-6 bg-accent">
               <div className="p-3 rounded-full bg-fitness-primary/10">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-6 w-6 text-fitness-primary"
-                >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-fitness-primary">
                   <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
                 </svg>
               </div>
@@ -171,18 +116,7 @@ const Index = () => {
             </div>
             <div className="flex flex-col items-center space-y-2 border rounded-lg p-6 bg-accent">
               <div className="p-3 rounded-full bg-fitness-primary/10">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-6 w-6 text-fitness-primary"
-                >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-fitness-primary">
                   <rect width="18" height="18" x="3" y="3" rx="2"></rect>
                   <path d="M9 9h6v6H9z"></path>
                   <path d="M6 9h.01"></path>
@@ -218,14 +152,9 @@ const Index = () => {
             </p>
           </div>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {featuredWorkouts.map((workout) => (
-              <Card key={workout.id} className="overflow-hidden transition-all hover:shadow-md">
+            {featuredWorkouts.map(workout => <Card key={workout.id} className="overflow-hidden transition-all hover:shadow-md">
                 <div className="relative h-48">
-                  <img
-                    src={workout.image}
-                    alt={workout.title}
-                    className="object-cover w-full h-full"
-                  />
+                  <img src={workout.image} alt={workout.title} className="object-cover w-full h-full" />
                   <div className="absolute top-2 right-2 px-2 py-1 text-xs font-medium bg-fitness-primary text-white rounded">
                     {workout.level}
                   </div>
@@ -239,18 +168,7 @@ const Index = () => {
                 </CardContent>
                 <CardFooter className="flex justify-between">
                   <div className="flex items-center space-x-1">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="w-4 h-4 text-yellow-500 fill-yellow-500"
-                    >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-yellow-500 fill-yellow-500">
                       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                     </svg>
                     <span>{workout.rating.toFixed(1)}</span>
@@ -260,8 +178,7 @@ const Index = () => {
                     <Button variant="ghost" size="sm">View Details</Button>
                   </Link>
                 </CardFooter>
-              </Card>
-            ))}
+              </Card>)}
           </div>
           <div className="mt-10 flex justify-center">
             <Link to="/workouts">
@@ -283,11 +200,7 @@ const Index = () => {
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <div className="flex flex-col p-6 space-y-4 bg-accent rounded-lg">
               <div className="flex items-center space-x-4">
-                <img
-                  src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1374&auto=format&fit=crop"
-                  alt="User"
-                  className="rounded-full h-12 w-12 object-cover"
-                />
+                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1374&auto=format&fit=crop" alt="User" className="rounded-full h-12 w-12 object-cover" />
                 <div>
                   <h4 className="font-medium">Sarah Johnson</h4>
                   <p className="text-sm text-gray-500">Lost 25 lbs in 6 months</p>
@@ -299,11 +212,7 @@ const Index = () => {
             </div>
             <div className="flex flex-col p-6 space-y-4 bg-accent rounded-lg">
               <div className="flex items-center space-x-4">
-                <img
-                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1374&auto=format&fit=crop"
-                  alt="User"
-                  className="rounded-full h-12 w-12 object-cover"
-                />
+                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1374&auto=format&fit=crop" alt="User" className="rounded-full h-12 w-12 object-cover" />
                 <div>
                   <h4 className="font-medium">Michael Thomas</h4>
                   <p className="text-sm text-gray-500">Gained 15 lbs of muscle</p>
@@ -315,11 +224,7 @@ const Index = () => {
             </div>
             <div className="flex flex-col p-6 space-y-4 bg-accent rounded-lg">
               <div className="flex items-center space-x-4">
-                <img
-                  src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?q=80&w=1374&auto=format&fit=crop"
-                  alt="User"
-                  className="rounded-full h-12 w-12 object-cover"
-                />
+                <img src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?q=80&w=1374&auto=format&fit=crop" alt="User" className="rounded-full h-12 w-12 object-cover" />
                 <div>
                   <h4 className="font-medium">Jennifer Lee</h4>
                   <p className="text-sm text-gray-500">Training for her first marathon</p>
@@ -343,21 +248,20 @@ const Index = () => {
             </p>
           </div>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {featuredPosts.map((post) => (
-              <Card key={post.id} className="overflow-hidden transition-all hover:shadow-md">
+            {featuredPosts.map(post => <Card key={post.id} className="overflow-hidden transition-all hover:shadow-md">
                 <div className="aspect-video relative">
-                  <img
-                    src={post.image}
-                    alt={post.title}
-                    className="object-cover w-full h-full"
-                  />
+                  <img src={post.image} alt={post.title} className="object-cover w-full h-full" />
                   <div className="absolute top-2 right-2 px-2 py-1 text-xs font-medium bg-fitness-primary text-white rounded">
                     {post.category}
                   </div>
                 </div>
                 <CardHeader>
                   <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <time dateTime={post.date}>{new Date(post.date).toLocaleDateString('en-US', {month: 'long', day: 'numeric', year: 'numeric'})}</time>
+                    <time dateTime={post.date}>{new Date(post.date).toLocaleDateString('en-US', {
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}</time>
                     <span>•</span>
                     <span>{post.readTime} min read</span>
                   </div>
@@ -368,11 +272,7 @@ const Index = () => {
                 </CardContent>
                 <CardFooter>
                   <div className="flex items-center space-x-4">
-                    <img
-                      src={post.author.image}
-                      alt={post.author.name}
-                      className="rounded-full h-8 w-8 object-cover"
-                    />
+                    <img src={post.author.image} alt={post.author.name} className="rounded-full h-8 w-8 object-cover" />
                     <div className="text-sm">
                       <p className="font-medium">{post.author.name}</p>
                       <p className="text-gray-500">{post.author.role}</p>
@@ -384,8 +284,7 @@ const Index = () => {
                     </Link>
                   </div>
                 </CardFooter>
-              </Card>
-            ))}
+              </Card>)}
           </div>
           <div className="mt-10 flex justify-center">
             <Link to="/blog">
@@ -398,11 +297,7 @@ const Index = () => {
       {/* CTA Section */}
       <section className="relative overflow-hidden bg-fitness-dark py-16">
         <div className="absolute inset-0 z-0">
-          <img
-            src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1470&auto=format&fit=crop"
-            alt="CTA Background"
-            className="w-full h-full object-cover opacity-20"
-          />
+          <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1470&auto=format&fit=crop" alt="CTA Background" className="w-full h-full object-cover opacity-20" />
           <div className="absolute inset-0 bg-gradient-to-r from-fitness-dark via-fitness-dark/90 to-fitness-dark/70"></div>
         </div>
         
@@ -429,8 +324,6 @@ const Index = () => {
           </div>
         </div>
       </section>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
