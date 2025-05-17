@@ -1,114 +1,206 @@
 
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { motion } from "framer-motion";
+import { Facebook, Instagram, Twitter, Youtube, Send } from "lucide-react";
 
 const Footer = () => {
+  const currentYear = new Date().getFullYear();
+  
   return (
     <footer className="border-t bg-background">
-      <div className="container px-4 py-12 md:py-16 lg:px-8">
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-          <div className="space-y-4">
-            <h3 className="text-lg font-bold">FitnessFreaks</h3>
-            <p className="text-sm text-muted-foreground">
-              Empowering your fitness journey with the tools you need to succeed.
+      <div className="container py-12 md:py-16">
+        {/* Newsletter Section */}
+        <div className="mb-16 rounded-2xl bg-gradient-to-r from-fitness-primary/10 to-fitness-secondary/10 p-8 md:p-10">
+          <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 text-center md:flex-row md:text-left">
+            <div className="max-w-lg">
+              <h3 className="mb-2 text-2xl font-bold tracking-tight">Join our newsletter</h3>
+              <p className="text-muted-foreground">Get the latest fitness tips, workout plans, and promotions delivered to your inbox.</p>
+            </div>
+            <div className="w-full md:w-auto">
+              <form className="flex w-full gap-2">
+                <Input 
+                  type="email" 
+                  placeholder="Enter your email" 
+                  className="w-full md:w-auto" 
+                  required
+                />
+                <Button type="submit" variant="default" className="bg-fitness-primary hover:bg-fitness-secondary flex-shrink-0">
+                  <Send className="mr-2 h-4 w-4" />
+                  Subscribe
+                </Button>
+              </form>
+            </div>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-8 md:grid-cols-5">
+          <div className="col-span-2">
+            <Link to="/" className="mb-6 flex items-center gap-2">
+              <div className="relative h-8 w-8 overflow-hidden rounded-full bg-gradient-to-br from-fitness-primary to-fitness-secondary">
+                <span className="absolute inset-0 flex items-center justify-center font-heading font-bold text-white">FF</span>
+              </div>
+              <span className="font-heading text-xl font-bold tracking-tight">
+                FitnessFreaks
+              </span>
+            </Link>
+            <p className="mb-6 max-w-xs text-sm text-muted-foreground">
+              Your ultimate destination for personalized fitness, expert guidance, and a supportive community to help you achieve your health and fitness goals.
             </p>
             <div className="flex gap-4">
-              <Link to="#" className="text-muted-foreground hover:text-fitness-primary">
+              <motion.a 
+                href="https://twitter.com" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full bg-muted p-2 text-muted-foreground transition-colors hover:bg-fitness-primary/20 hover:text-fitness-primary"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 <span className="sr-only">Twitter</span>
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-                  <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/>
-                </svg>
-              </Link>
-              <Link to="#" className="text-muted-foreground hover:text-fitness-primary">
+                <Twitter className="h-5 w-5" />
+              </motion.a>
+              <motion.a 
+                href="https://instagram.com" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full bg-muted p-2 text-muted-foreground transition-colors hover:bg-fitness-primary/20 hover:text-fitness-primary"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 <span className="sr-only">Instagram</span>
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-                  <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
-                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-                  <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
-                </svg>
-              </Link>
-              <Link to="#" className="text-muted-foreground hover:text-fitness-primary">
+                <Instagram className="h-5 w-5" />
+              </motion.a>
+              <motion.a 
+                href="https://facebook.com" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full bg-muted p-2 text-muted-foreground transition-colors hover:bg-fitness-primary/20 hover:text-fitness-primary"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 <span className="sr-only">Facebook</span>
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
-                </svg>
-              </Link>
+                <Facebook className="h-5 w-5" />
+              </motion.a>
+              <motion.a 
+                href="https://youtube.com" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full bg-muted p-2 text-muted-foreground transition-colors hover:bg-fitness-primary/20 hover:text-fitness-primary"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <span className="sr-only">YouTube</span>
+                <Youtube className="h-5 w-5" />
+              </motion.a>
             </div>
           </div>
           <div className="space-y-4">
             <h4 className="text-base font-bold">Resources</h4>
-            <ul className="space-y-2 text-sm">
+            <ul className="space-y-3 text-sm">
               <li>
-                <Link to="/workouts" className="text-muted-foreground hover:text-fitness-primary">
+                <Link to="/workouts" className="text-muted-foreground transition-colors hover:text-fitness-primary">
                   Workout Library
                 </Link>
               </li>
               <li>
-                <Link to="/nutrition" className="text-muted-foreground hover:text-fitness-primary">
-                  Nutrition Plans
+                <Link to="/nutrition" className="text-muted-foreground transition-colors hover:text-fitness-primary">
+                  Nutrition Guides
                 </Link>
               </li>
               <li>
-                <Link to="/blog" className="text-muted-foreground hover:text-fitness-primary">
+                <Link to="/blog" className="text-muted-foreground transition-colors hover:text-fitness-primary">
                   Fitness Blog
                 </Link>
               </li>
               <li>
-                <Link to="/community" className="text-muted-foreground hover:text-fitness-primary">
+                <Link to="/community" className="text-muted-foreground transition-colors hover:text-fitness-primary">
                   Community Forum
+                </Link>
+              </li>
+              <li>
+                <Link to="/progress" className="text-muted-foreground transition-colors hover:text-fitness-primary">
+                  Progress Tracking
                 </Link>
               </li>
             </ul>
           </div>
           <div className="space-y-4">
             <h4 className="text-base font-bold">Company</h4>
-            <ul className="space-y-2 text-sm">
+            <ul className="space-y-3 text-sm">
               <li>
-                <Link to="/about" className="text-muted-foreground hover:text-fitness-primary">
+                <Link to="/about" className="text-muted-foreground transition-colors hover:text-fitness-primary">
                   About Us
                 </Link>
               </li>
               <li>
-                <Link to="/contact" className="text-muted-foreground hover:text-fitness-primary">
+                <Link to="/contact" className="text-muted-foreground transition-colors hover:text-fitness-primary">
                   Contact
                 </Link>
               </li>
               <li>
-                <Link to="/careers" className="text-muted-foreground hover:text-fitness-primary">
+                <Link to="/careers" className="text-muted-foreground transition-colors hover:text-fitness-primary">
                   Careers
                 </Link>
               </li>
               <li>
-                <Link to="/press" className="text-muted-foreground hover:text-fitness-primary">
+                <Link to="/press" className="text-muted-foreground transition-colors hover:text-fitness-primary">
                   Press
+                </Link>
+              </li>
+              <li>
+                <Link to="/partners" className="text-muted-foreground transition-colors hover:text-fitness-primary">
+                  Partners
                 </Link>
               </li>
             </ul>
           </div>
           <div className="space-y-4">
             <h4 className="text-base font-bold">Legal</h4>
-            <ul className="space-y-2 text-sm">
+            <ul className="space-y-3 text-sm">
               <li>
-                <Link to="/privacy" className="text-muted-foreground hover:text-fitness-primary">
+                <Link to="/privacy" className="text-muted-foreground transition-colors hover:text-fitness-primary">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link to="/terms" className="text-muted-foreground hover:text-fitness-primary">
+                <Link to="/terms" className="text-muted-foreground transition-colors hover:text-fitness-primary">
                   Terms of Service
                 </Link>
               </li>
               <li>
-                <Link to="/cookies" className="text-muted-foreground hover:text-fitness-primary">
+                <Link to="/cookies" className="text-muted-foreground transition-colors hover:text-fitness-primary">
                   Cookie Policy
+                </Link>
+              </li>
+              <li>
+                <Link to="/accessibility" className="text-muted-foreground transition-colors hover:text-fitness-primary">
+                  Accessibility
+                </Link>
+              </li>
+              <li>
+                <Link to="/gdpr" className="text-muted-foreground transition-colors hover:text-fitness-primary">
+                  GDPR
                 </Link>
               </li>
             </ul>
           </div>
         </div>
-        <div className="mt-12 border-t pt-6">
-          <p className="text-center text-xs text-muted-foreground">
-            © {new Date().getFullYear()} FitnessFreaks. All rights reserved.
+        <div className="mt-12 flex flex-col items-center justify-between border-t pt-8 md:flex-row">
+          <p className="mb-4 text-center text-xs text-muted-foreground md:mb-0">
+            © {currentYear} FitnessFreaks. All rights reserved. Crafted with ♥ for fitness enthusiasts.
           </p>
+          <div className="flex gap-4 text-xs text-muted-foreground">
+            <Link to="/privacy" className="hover:text-fitness-primary">
+              Privacy
+            </Link>
+            <Link to="/terms" className="hover:text-fitness-primary">
+              Terms
+            </Link>
+            <Link to="/cookies" className="hover:text-fitness-primary">
+              Cookies
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

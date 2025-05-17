@@ -70,22 +70,103 @@
 @layer base {
   * {
     @apply border-border;
+    scroll-behavior: smooth;
   }
   body {
     @apply bg-background text-foreground font-sans;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-heading font-bold;
+    @apply font-heading font-bold tracking-tight;
+  }
+  h1 {
+    @apply text-3xl sm:text-4xl md:text-5xl lg:text-6xl;
+  }
+  h2 {
+    @apply text-2xl sm:text-3xl md:text-4xl;
+  }
+  h3 {
+    @apply text-xl sm:text-2xl md:text-3xl;
+  }
+  h4 {
+    @apply text-lg sm:text-xl;
   }
   
   /* Glass morphism utility class */
   .glass {
     @apply bg-white/80 dark:bg-black/50 backdrop-blur-md border border-white/20 dark:border-white/10 shadow-lg;
   }
+
+  /* Card hover effect */
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-md hover:-translate-y-1;
+  }
+
+  /* Text gradient */
+  .text-gradient {
+    @apply bg-gradient-to-r from-fitness-primary to-fitness-secondary bg-clip-text text-transparent;
+  }
+
+  /* Button hover animation */
+  .btn-hover {
+    @apply relative overflow-hidden transition-all duration-300;
+  }
+  
+  .btn-hover::after {
+    @apply absolute inset-0 -translate-x-full bg-white/20 transition-transform duration-300 ease-out content-[''];
+  }
+  
+  .btn-hover:hover::after {
+    @apply translate-x-0;
+  }
+  
+  /* Section padding utility */
+  .section-padding {
+    @apply py-16 md:py-24;
+  }
+  
+  /* Smooth scroll behavior for anchor links */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Image hover zoom effect */
+  .image-zoom {
+    @apply overflow-hidden;
+  }
+  
+  .image-zoom img {
+    @apply transition-transform duration-500;
+  }
+  
+  .image-zoom:hover img {
+    @apply scale-110;
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+  
+  /* Animated underline for links */
+  .link-underline {
+    @apply relative;
+  }
+  
+  .link-underline::after {
+    @apply absolute bottom-0 left-0 h-0.5 w-0 bg-fitness-primary transition-all duration-300 content-[''];
+  }
+  
+  .link-underline:hover::after {
+    @apply w-full;
+  }
+  
+  /* Highlight text */
+  .highlight {
+    @apply relative inline-block;
+  }
+  
+  .highlight::before {
+    @apply absolute bottom-1 left-0 -z-10 h-3 w-full bg-fitness-primary/30 content-[''];
   }
 }
