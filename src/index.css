@@ -53,7 +53,7 @@
     --secondary-foreground: 0 0% 98%;
 
     --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
+    --muted-foreground: 240 5% 84.9%; /* Increased brightness for better visibility */
 
     --accent: 240 3.7% 15.9%;
     --accent-foreground: 0 0% 98%;
@@ -140,6 +140,15 @@
   
   .image-zoom:hover img {
     @apply scale-110;
+  }
+
+  /* Dark mode specific text fixes */
+  .dark .text-gray-500 {
+    @apply text-gray-300;
+  }
+  
+  .dark .text-gray-600 {
+    @apply text-gray-200;
   }
 }
 

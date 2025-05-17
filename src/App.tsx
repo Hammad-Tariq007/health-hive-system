@@ -16,6 +16,7 @@ import Nutrition from "./pages/Nutrition";
 import Blog from "./pages/Blog";
 import Community from "./pages/Community";
 import UserDashboard from "./pages/UserDashboard";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/blog" element={<Blog />} />
             <Route path="/community" element={<Community />} />
             <Route path="/dashboard" element={<UserDashboard />} />
+            <Route path="/profile" element={<Profile />} />
           </Route>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
