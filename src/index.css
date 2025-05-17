@@ -1,4 +1,5 @@
 
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -103,7 +104,7 @@
 
   /* Text gradient */
   .text-gradient {
-    @apply bg-gradient-to-r from-fitness-primary to-fitness-secondary bg-clip-text text-transparent;
+    @apply bg-clip-text text-transparent;
   }
 
   /* Button hover animation */
@@ -142,13 +143,34 @@
     @apply scale-110;
   }
 
-  /* Dark mode specific text fixes */
+  /* Dark mode specific text improvements */
+  .dark .text-slate-800 {
+    @apply text-slate-100;
+  }
+  
   .dark .text-gray-500 {
     @apply text-gray-300;
   }
   
   .dark .text-gray-600 {
     @apply text-gray-200;
+  }
+  
+  /* Prose styling for content pages */
+  .prose h1, .prose h2, .prose h3, .prose h4 {
+    @apply font-heading font-bold text-slate-800 dark:text-white;
+  }
+  
+  .prose p, .prose li {
+    @apply text-gray-600 dark:text-gray-300;
+  }
+  
+  .prose a {
+    @apply text-fitness-primary hover:text-fitness-secondary transition-colors;
+  }
+  
+  .prose strong {
+    @apply font-semibold dark:text-white;
   }
 }
 
@@ -178,4 +200,15 @@
   .highlight::before {
     @apply absolute bottom-1 left-0 -z-10 h-3 w-full bg-fitness-primary/30 content-[''];
   }
+  
+  /* Hide scrollbar but allow scrolling */
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
 }
+

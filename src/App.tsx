@@ -18,6 +18,18 @@ import Community from "./pages/Community";
 import UserDashboard from "./pages/UserDashboard";
 import Profile from "./pages/Profile";
 
+// Import all the new pages
+import AboutUs from "./pages/AboutUs";
+import Contact from "./pages/Contact";
+import Careers from "./pages/Careers";
+import Press from "./pages/Press";
+import Partners from "./pages/Partners";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import Cookies from "./pages/Cookies";
+import Accessibility from "./pages/Accessibility";
+import GDPR from "./pages/GDPR";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -37,6 +49,20 @@ const App = () => (
             <Route path="/community" element={<Community />} />
             <Route path="/dashboard" element={<UserDashboard />} />
             <Route path="/profile" element={<Profile />} />
+            
+            {/* Company Pages */}
+            <Route path="/about" element={<AboutUs />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/careers" element={<Careers />} />
+            <Route path="/press" element={<Press />} />
+            <Route path="/partners" element={<Partners />} />
+            
+            {/* Legal Pages */}
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/cookies" element={<Cookies />} />
+            <Route path="/accessibility" element={<Accessibility />} />
+            <Route path="/gdpr" element={<GDPR />} />
           </Route>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
