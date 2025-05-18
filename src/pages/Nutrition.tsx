@@ -5,10 +5,29 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { nutritionPlans } from "@/data/nutrition";
+import { mealPlans } from "@/data/nutrition";
 import { Link } from "react-router-dom";
 import { LazyLoadImage } from 'react-lazy-load-image-component';
 import 'react-lazy-load-image-component/src/effects/blur.css';
+
+// Convert meal plans to the format expected by the component
+const nutritionPlans = mealPlans.map(plan => ({
+  id: plan.id,
+  title: plan.title,
+  description: plan.description,
+  type: plan.dietType,
+  image: plan.image,
+  macros: {
+    protein: Math.round((plan.macros.protein * 4 / plan.totalCalories) * 100),
+    carbs: Math.round((plan.macros.carbs * 4 / plan.totalCalories) * 100),
+    fats: Math.round((plan.macros.fat * 9 / plan.totalCalories) * 100)
+  },
+  keyFeatures: [
+    `${plan.totalCalories} calories per day`,
+    `${plan.meals.length} meals per day`,
+    `${plan.goal} focused`
+  ]
+}));
 
 const Nutrition = () => {
   const [activeTab, setActiveTab] = useState("all");

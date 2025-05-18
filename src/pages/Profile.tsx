@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -43,6 +42,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+
+// Import the Mail icon correctly from lucide-react
+import { Mail as MailIcon } from "lucide-react";
 
 // Define workout history type
 interface WorkoutHistoryItem {
@@ -857,7 +859,7 @@ const Profile = () => {
                           
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <Mail className="h-4 w-4 text-muted-foreground" />
+                              <MailIcon className="h-4 w-4 text-muted-foreground" />
                               <Label htmlFor="newsletter-emails">Newsletter Emails</Label>
                             </div>
                             <Switch 

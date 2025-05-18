@@ -132,6 +132,11 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         email,
         password,
         role: 'user' as UserRole,
+        // Add default values for the required properties
+        gender: '',
+        age: 0,
+        height: 0,
+        weight: 0,
         createdAt: new Date()
       };
       
