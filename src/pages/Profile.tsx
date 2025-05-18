@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -14,9 +13,38 @@ import SubscriptionCard from "@/components/profile/SubscriptionCard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 
-// Import data for mock workout history
-import { workouts } from "@/data/workouts";
-import { nutrition } from "@/data/nutrition";
+// Import data for mock workout history from data/workouts.ts
+import { workoutPlans } from "@/data/workouts";
+
+// Mock data for user progress
+const progressData = {
+  weight: {
+    current: 75,
+    goal: 70,
+    progress: (75 / 70) * 100
+  },
+  workoutsCompleted: 12,
+  calories: {
+    goal: 2000,
+    consumed: 1650
+  }
+};
+
+// Mock workout history
+const workoutHistory = [
+  { id: '1', name: 'Full Body HIIT', date: '2023-05-15', duration: 45 },
+  { id: '2', name: 'Upper Body Strength', date: '2023-05-12', duration: 40 },
+  { id: '3', name: 'Yoga Flow', date: '2023-05-10', duration: 30 },
+  { id: '4', name: 'Core Crusher', date: '2023-05-08', duration: 20 },
+  { id: '5', name: 'Leg Day Challenge', date: '2023-05-05', duration: 50 }
+];
+
+// Mock nutrition plans
+const nutritionPlans = [
+  { id: '1', name: 'Balanced Diet', startDate: '2023-05-01', endDate: '2023-06-01', calories: 2000 },
+  { id: '2', name: 'High Protein', startDate: '2023-04-01', endDate: '2023-05-01', calories: 2200 },
+  { id: '3', name: 'Low Carb', startDate: '2023-03-01', endDate: '2023-04-01', calories: 1800 }
+];
 
 const Profile = () => {
   const { user, isLoading } = useUser();

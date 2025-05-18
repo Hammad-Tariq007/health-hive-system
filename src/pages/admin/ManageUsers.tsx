@@ -6,10 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useUser, User, UserRole } from "@/contexts/UserContext";
+import { useUser, UserRole } from "@/contexts/UserContext";
 import AdminLayout from "./AdminLayout";
 import { motion } from "framer-motion";
-import { ArrowUpDown, Search, Trash2, Shield, User, MoreHorizontal } from "lucide-react";
+import { ArrowUpDown, Search, Trash2, Shield, User as UserIcon, MoreHorizontal } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -38,9 +38,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+// Import User type from contexts/UserContext.tsx but rename it to UserType
+import { User as UserType } from "@/contexts/UserContext";
+
 type UserStatus = 'active' | 'inactive';
 
-interface UserData extends User {
+interface UserData extends UserType {
   status: UserStatus;
 }
 
@@ -245,7 +248,7 @@ const ManageUsers = () => {
             </div>
             
             <Button className="bg-fitness-primary hover:bg-fitness-secondary sm:w-auto w-full">
-              <User className="mr-2 h-4 w-4" />
+              <UserIcon className="mr-2 h-4 w-4" />
               Add New User
             </Button>
           </div>
@@ -314,7 +317,7 @@ const ManageUsers = () => {
                               {userData.role === 'admin' ? 'Demote to User' : 'Promote to Admin'}
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleToggleStatus(userData.id)}>
-                              <User className="mr-2 h-4 w-4" />
+                              <UserIcon className="mr-2 h-4 w-4" />
                               {userData.status === 'active' ? 'Deactivate' : 'Activate'}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
