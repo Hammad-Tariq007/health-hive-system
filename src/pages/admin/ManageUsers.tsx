@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -27,7 +26,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 import {
@@ -39,7 +37,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-// Mock users data
+// Mock users data with admin@gmail.com account
 const mockUsers = [
   {
     id: '1',
@@ -80,6 +78,14 @@ const mockUsers = [
     role: 'user' as const,
     status: 'active' as const,
     createdAt: new Date('2023-09-10')
+  },
+  {
+    id: '6',
+    name: 'Admin User',
+    email: 'admin@gmail.com',
+    role: 'admin' as const,
+    status: 'active' as const,
+    createdAt: new Date('2023-01-01')
   }
 ];
 
@@ -132,6 +138,16 @@ const ManageUsers = () => {
   );
 
   const handleDeleteUser = (id: string) => {
+    // Don't allow deletion of the current user
+    if (user?.id === id) {
+      toast({
+        title: "Cannot Delete",
+        description: "You cannot delete your own account while logged in.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setUsers(users.filter(user => user.id !== id));
     
     toast({
@@ -237,24 +253,24 @@ const ManageUsers = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
+                  {filteredUsers.map((userData) => (
+                    <TableRow key={userData.id}>
+                      <TableCell className="font-medium">{userData.name}</TableCell>
+                      <TableCell>{userData.email}</TableCell>
                       <TableCell>
-                        <Badge variant={user.role === 'admin' ? "default" : "outline"}>
-                          {user.role === 'admin' ? 'Admin' : 'User'}
+                        <Badge variant={userData.role === 'admin' ? "default" : "outline"}>
+                          {userData.role === 'admin' ? 'Admin' : 'User'}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <Badge 
-                          variant={user.status === 'active' ? "default" : "outline"}
-                          className={user.status === 'active' ? 'bg-green-500 hover:bg-green-600' : ''}
+                          variant={userData.status === 'active' ? "default" : "outline"}
+                          className={userData.status === 'active' ? 'bg-green-500 hover:bg-green-600' : ''}
                         >
-                          {user.status === 'active' ? 'Active' : 'Inactive'}
+                          {userData.status === 'active' ? 'Active' : 'Inactive'}
                         </Badge>
                       </TableCell>
-                      <TableCell>{user.createdAt.toLocaleDateString()}</TableCell>
+                      <TableCell>{userData.createdAt.toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -265,18 +281,19 @@ const ManageUsers = () => {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleToggleRole(user.id)}>
+                            <DropdownMenuItem onClick={() => handleToggleRole(userData.id)}>
                               <Shield className="mr-2 h-4 w-4" />
-                              {user.role === 'admin' ? 'Demote to User' : 'Promote to Admin'}
+                              {userData.role === 'admin' ? 'Demote to User' : 'Promote to Admin'}
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleToggleStatus(user.id)}>
+                            <DropdownMenuItem onClick={() => handleToggleStatus(userData.id)}>
                               <User className="mr-2 h-4 w-4" />
-                              {user.status === 'active' ? 'Deactivate' : 'Activate'}
+                              {userData.status === 'active' ? 'Deactivate' : 'Activate'}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
-                              onClick={() => setSelectedUser(user)}
+                              onClick={() => setSelectedUser(userData)}
+                              disabled={user?.email === userData.email} // Prevent deleting the current user
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
                               Delete User

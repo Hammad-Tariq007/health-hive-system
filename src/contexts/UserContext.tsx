@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect } from 'react';
 
 export type UserRole = 'user' | 'admin';
@@ -52,6 +51,19 @@ const MOCK_USERS = [
     height: 180,
     weight: 75,
     createdAt: new Date('2023-06-15')
+  },
+  // Add the special admin@gmail.com account as requested
+  {
+    id: '3',
+    name: 'Admin User',
+    email: 'admin@gmail.com',
+    password: 'admin@123',
+    role: 'admin' as UserRole,
+    gender: 'other',
+    age: 35,
+    height: 175,
+    weight: 70,
+    createdAt: new Date('2023-01-01')
   }
 ];
 

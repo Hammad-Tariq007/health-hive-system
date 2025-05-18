@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/layout/Layout";
 import ScrollToTop from "./components/utils/ScrollToTop";
 import Index from "./pages/Index";
@@ -65,13 +65,6 @@ const App = () => (
               <Route path="/edit-profile" element={<EditProfile />} />
               <Route path="/bmi-calculator" element={<BmiCalculator />} />
               
-              {/* Admin Routes */}
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/users" element={<ManageUsers />} />
-              <Route path="/admin/workouts" element={<ManageWorkouts />} />
-              <Route path="/admin/nutrition" element={<ManageNutrition />} />
-              <Route path="/admin/blog" element={<ManageBlog />} />
-              
               {/* Company Pages */}
               <Route path="/about" element={<AboutUs />} />
               <Route path="/contact" element={<Contact />} />
@@ -86,6 +79,14 @@ const App = () => (
               <Route path="/accessibility" element={<Accessibility />} />
               <Route path="/gdpr" element={<GDPR />} />
             </Route>
+            
+            {/* Admin Routes - These don't use the main Layout component */}
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/users" element={<ManageUsers />} />
+            <Route path="/admin/workouts" element={<ManageWorkouts />} />
+            <Route path="/admin/nutrition" element={<ManageNutrition />} />
+            <Route path="/admin/blog" element={<ManageBlog />} />
+            
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="*" element={<NotFound />} />

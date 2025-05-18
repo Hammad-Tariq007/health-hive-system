@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -167,12 +166,12 @@ const Header = ({ scrolled = false }: HeaderProps) => {
               </NavigationMenuItem>
               
               {/* Admin Button - Only visible for admin users */}
-              {isAdmin() && (
+              {user && isAdmin() && (
                 <NavigationMenuItem>
                   <Link to="/admin">
                     <NavigationMenuLink className="group inline-flex h-9 w-max items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50 relative">
                       <Shield className="mr-1 h-4 w-4" />
-                      Admin
+                      Admin Panel
                       {location.pathname.startsWith('/admin') && (
                         <motion.div
                           className="absolute -bottom-1 left-0 h-0.5 w-full bg-fitness-primary"
@@ -327,8 +326,9 @@ const Header = ({ scrolled = false }: HeaderProps) => {
                 <MobileNavLink to="/community">Community</MobileNavLink>
                 <MobileNavLink to="/blog">Blog</MobileNavLink>
                 
-                {isAdmin() && (
-                  <MobileNavLink to="/admin">Admin Dashboard</MobileNavLink>
+                {/* Show Admin Panel link only for admin users */}
+                {user && isAdmin() && (
+                  <MobileNavLink to="/admin">Admin Panel</MobileNavLink>
                 )}
                 
                 {user ? (
