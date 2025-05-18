@@ -1,276 +1,244 @@
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { authAPI, subscriptionAPI } from "../api";
+import { useToast } from "@/hooks/use-toast";
 
-export type UserRole = 'user' | 'admin';
-export type SubscriptionPlan = 'free' | 'pro' | 'elite';
+export type UserRole = "user" | "admin";
+export type SubscriptionPlan = "free" | "pro" | "elite";
 
 export interface User {
   id: string;
   name: string;
   email: string;
   role: UserRole;
-  gender?: string;
-  age?: number;
-  height?: number;
-  weight?: number;
+  subscriptionPlan: SubscriptionPlan;
+  profileImage?: string;
+  token?: string;
   createdAt: Date;
-  subscriptionPlan?: SubscriptionPlan;
-  subscriptionDate?: Date;
 }
 
 interface UserContextType {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<boolean>;
+  signup: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  updateUser: (userData: Partial<User>) => Promise<void>;
+  updateUser: (updatedUser: Partial<User>) => void;
   isAdmin: () => boolean;
-  updateSubscription: (plan: SubscriptionPlan) => Promise<void>;
+  checkSubscription: () => Promise<void>;
 }
 
-export const UserContext = createContext<UserContextType | undefined>(undefined);
+const UserContext = createContext<UserContextType | null>(null);
 
-// Mock user data for demonstration
-const MOCK_USERS = [
-  {
-    id: '1',
-    name: 'Jane Doe',
-    email: 'admin@example.com',
-    password: 'admin123',
-    role: 'admin' as UserRole,
-    gender: 'female',
-    age: 28,
-    height: 165,
-    weight: 58,
-    createdAt: new Date('2023-05-01'),
-    subscriptionPlan: 'pro' as SubscriptionPlan
-  },
-  {
-    id: '2',
-    name: 'John Smith',
-    email: 'user@example.com',
-    password: 'user123',
-    role: 'user' as UserRole,
-    gender: 'male',
-    age: 32,
-    height: 180,
-    weight: 75,
-    createdAt: new Date('2023-06-15'),
-    subscriptionPlan: 'free' as SubscriptionPlan
-  },
-  // Add the special admin@gmail.com account as requested
-  {
-    id: '3',
-    name: 'Admin User',
-    email: 'admin@gmail.com',
-    password: 'admin@123',
-    role: 'admin' as UserRole,
-    gender: 'other',
-    age: 35,
-    height: 175,
-    weight: 70,
-    createdAt: new Date('2023-01-01'),
-    subscriptionPlan: 'elite' as SubscriptionPlan
-  }
-];
-
-export const UserProvider = ({ children }: { children: React.ReactNode }) => {
+export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [users, setUsers] = useState<Array<typeof MOCK_USERS[0]>>(
-    // Load users from localStorage if available, otherwise use the mock data
-    JSON.parse(localStorage.getItem('fitnessUsers') || JSON.stringify(MOCK_USERS))
-  );
-
-  // Save users to localStorage whenever they change
+  const { toast } = useToast();
+  
   useEffect(() => {
-    localStorage.setItem('fitnessUsers', JSON.stringify(users));
-  }, [users]);
-
-  // Check for saved user on initial load
-  useEffect(() => {
-    const savedUser = localStorage.getItem('fitnessUser');
+    // Check for stored user on component mount
+    const storedUser = localStorage.getItem("fitnessUser");
+    const storedToken = localStorage.getItem("fitnessToken");
     
-    if (savedUser) {
+    if (storedUser && storedToken) {
       try {
-        const parsedUser = JSON.parse(savedUser);
+        const parsedUser = JSON.parse(storedUser);
+        
+        // Convert string date to Date object
+        if (parsedUser.createdAt) {
+          parsedUser.createdAt = new Date(parsedUser.createdAt);
+        } else {
+          parsedUser.createdAt = new Date();
+        }
+        
         setUser({
           ...parsedUser,
-          createdAt: new Date(parsedUser.createdAt),
-          subscriptionDate: parsedUser.subscriptionDate ? new Date(parsedUser.subscriptionDate) : undefined
+          token: storedToken
         });
+        
+        // Verify the token with the backend
+        authAPI.getCurrentUser()
+          .then(() => {
+            // Token is valid, check subscription status
+            checkSubscription();
+          })
+          .catch((error) => {
+            console.error("Token validation failed:", error);
+            // If token is invalid, log the user out
+            logout();
+          })
+          .finally(() => {
+            setIsLoading(false);
+          });
       } catch (error) {
-        console.error('Failed to parse saved user:', error);
-        localStorage.removeItem('fitnessUser');
+        console.error("Error parsing stored user:", error);
+        localStorage.removeItem("fitnessUser");
+        localStorage.removeItem("fitnessToken");
+        setIsLoading(false);
       }
+    } else {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   }, []);
-
-  const login = async (email: string, password: string): Promise<void> => {
-    setIsLoading(true);
-    
+  
+  const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      // Simulating API call with timeout
-      await new Promise(resolve => setTimeout(resolve, 800));
+      setIsLoading(true);
+      const response = await authAPI.login({ email, password });
+      const { user, token } = response.data.user;
       
-      // Find user with matching credentials
-      const foundUser = users.find(u => 
-        u.email.toLowerCase() === email.toLowerCase() && u.password === password
-      );
-      
-      if (!foundUser) {
-        throw new Error('Invalid email or password');
-      }
-      
-      // Remove password before storing user data
-      const { password: _, ...userWithoutPassword } = foundUser;
-      
-      // Set user in state and localStorage
-      setUser(userWithoutPassword);
-      localStorage.setItem('fitnessUser', JSON.stringify(userWithoutPassword));
-      
-    } catch (error) {
-      console.error('Login failed:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const signup = async (name: string, email: string, password: string): Promise<void> => {
-    setIsLoading(true);
-    
-    try {
-      // Simulating API call with timeout
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Check if user with this email already exists
-      const existingUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-      
-      if (existingUser) {
-        throw new Error('Email already in use');
-      }
-      
-      // Create new user
-      const newUser = {
-        id: `${users.length + 1}`,
-        name,
-        email,
-        password,
-        role: 'user' as UserRole,
-        gender: '',
-        age: 0,
-        height: 0,
-        weight: 0,
-        createdAt: new Date(),
-        subscriptionPlan: 'free' as SubscriptionPlan
+      // Format the user object
+      const formattedUser: User = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        subscriptionPlan: user.subscriptionPlan,
+        profileImage: user.profileImage,
+        token: token,
+        createdAt: new Date(user.createdAt)
       };
       
-      // Update users array and localStorage
-      const updatedUsers = [...users, newUser];
-      setUsers(updatedUsers);
-      localStorage.setItem('fitnessUsers', JSON.stringify(updatedUsers));
+      // Store user data
+      localStorage.setItem("fitnessUser", JSON.stringify(formattedUser));
+      localStorage.setItem("fitnessToken", token);
       
-      // Note: We don't automatically log in the user here
+      setUser(formattedUser);
       
-    } catch (error) {
-      console.error('Signup failed:', error);
-      throw error;
+      // Check subscription status
+      await checkSubscription();
+      
+      toast({
+        title: "Login Successful",
+        description: `Welcome back, ${formattedUser.name}!`,
+      });
+      
+      return true;
+    } catch (error: any) {
+      const message = error.response?.data?.message || "Login failed";
+      toast({
+        title: "Login Failed",
+        description: message,
+        variant: "destructive",
+      });
+      return false;
     } finally {
       setIsLoading(false);
     }
   };
-
+  
+  const signup = async (name: string, email: string, password: string): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      const response = await authAPI.register({ name, email, password });
+      const { user, token } = response.data.user;
+      
+      // Format the user object
+      const formattedUser: User = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        subscriptionPlan: user.subscriptionPlan,
+        profileImage: user.profileImage,
+        token: token,
+        createdAt: new Date(user.createdAt)
+      };
+      
+      // Store user data
+      localStorage.setItem("fitnessUser", JSON.stringify(formattedUser));
+      localStorage.setItem("fitnessToken", token);
+      
+      setUser(formattedUser);
+      
+      toast({
+        title: "Registration Successful",
+        description: `Welcome to Fitness Platform, ${formattedUser.name}!`,
+      });
+      
+      return true;
+    } catch (error: any) {
+      const message = error.response?.data?.message || "Registration failed";
+      toast({
+        title: "Registration Failed",
+        description: message,
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   const logout = () => {
+    localStorage.removeItem("fitnessUser");
+    localStorage.removeItem("fitnessToken");
     setUser(null);
-    localStorage.removeItem('fitnessUser');
+    toast({
+      title: "Logged Out",
+      description: "You have been successfully logged out.",
+    });
   };
-
-  const updateUser = async (userData: Partial<User>): Promise<void> => {
-    if (!user) throw new Error('No user logged in');
-    
-    setIsLoading(true);
-    
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
+  
+  const updateUser = (updatedUser: Partial<User>) => {
+    if (user) {
+      const newUser = { ...user, ...updatedUser };
+      setUser(newUser);
+      localStorage.setItem("fitnessUser", JSON.stringify(newUser));
       
-      // Update the user data
-      const updatedUser = { ...user, ...userData };
-      
-      // Update in state and localStorage
-      setUser(updatedUser);
-      localStorage.setItem('fitnessUser', JSON.stringify(updatedUser));
-      
-      // Also update in the users array
-      const updatedUsers = users.map(u => 
-        u.id === user.id ? { ...u, ...userData, password: u.password } : u
-      );
-      setUsers(updatedUsers);
-      localStorage.setItem('fitnessUsers', JSON.stringify(updatedUsers));
-      
-    } catch (error) {
-      console.error('Update failed:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
+      // If token is updated, store it separately
+      if (updatedUser.token) {
+        localStorage.setItem("fitnessToken", updatedUser.token);
+      }
     }
   };
-
-  const updateSubscription = async (plan: SubscriptionPlan): Promise<void> => {
-    if (!user) throw new Error('No user logged in');
-    
-    setIsLoading(true);
+  
+  const isAdmin = () => {
+    return user?.role === "admin";
+  };
+  
+  const checkSubscription = async (): Promise<void> => {
+    if (!user) return;
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const response = await subscriptionAPI.getSubscriptionStatus();
+      const { subscribed, plan } = response.data;
       
-      const subscriptionData = {
-        subscriptionPlan: plan,
-        subscriptionDate: new Date()
-      };
-      
-      // Update the user data
-      const updatedUser = { ...user, ...subscriptionData };
-      
-      // Update in state and localStorage
-      setUser(updatedUser);
-      localStorage.setItem('fitnessUser', JSON.stringify(updatedUser));
-      
-      // Also update in the users array
-      const updatedUsers = users.map(u => 
-        u.id === user.id ? { ...u, ...subscriptionData, password: u.password } : u
-      );
-      setUsers(updatedUsers);
-      localStorage.setItem('fitnessUsers', JSON.stringify(updatedUsers));
-      
+      // Update user's subscription plan if it changed
+      if (user.subscriptionPlan !== plan) {
+        updateUser({ subscriptionPlan: plan as SubscriptionPlan });
+        
+        // Show toast if subscription was upgraded
+        if (plan !== 'free' && user.subscriptionPlan === 'free') {
+          toast({
+            title: "Subscription Activated",
+            description: `You are now on the ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan.`,
+          });
+        } 
+        // Show toast if subscription was downgraded
+        else if (plan === 'free' && user.subscriptionPlan !== 'free') {
+          toast({
+            title: "Subscription Ended",
+            description: "Your subscription has expired or been cancelled.",
+          });
+        }
+      }
     } catch (error) {
-      console.error('Subscription update failed:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
+      console.error("Failed to check subscription status:", error);
     }
   };
-
-  const isAdmin = (): boolean => {
-    return user?.role === 'admin';
-  };
-
+  
   return (
-    <UserContext.Provider 
-      value={{ 
-        user, 
-        isLoading, 
-        login, 
-        signup, 
-        logout, 
+    <UserContext.Provider
+      value={{
+        user,
+        isLoading,
+        login,
+        signup,
+        logout,
         updateUser,
         isAdmin,
-        updateSubscription
+        checkSubscription
       }}
     >
       {children}
@@ -280,10 +248,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useUser = () => {
   const context = useContext(UserContext);
-  
-  if (context === undefined) {
-    throw new Error('useUser must be used within a UserProvider');
+  if (context === null) {
+    throw new Error("useUser must be used within a UserProvider");
   }
-  
   return context;
 };

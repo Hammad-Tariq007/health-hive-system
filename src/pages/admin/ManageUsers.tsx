@@ -40,6 +40,7 @@ import {
 
 // Import User type from contexts/UserContext.tsx but rename it to UserType
 import { User as UserType } from "@/contexts/UserContext";
+import { userAPI } from "@/api"; // Import the API
 
 type UserStatus = 'active' | 'inactive';
 
@@ -56,7 +57,7 @@ const ManageUsers = () => {
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Load users from localStorage when component mounts
+  // Load real users from API
   useEffect(() => {
     // Check if user is admin, if not redirect
     if (!currentUser) {
@@ -79,32 +80,37 @@ const ManageUsers = () => {
       return;
     }
 
-    // Load users from localStorage
-    const loadUsers = () => {
-      const storedUsers = localStorage.getItem('fitnessUsers');
-      if (storedUsers) {
-        try {
-          const parsedUsers = JSON.parse(storedUsers);
-          // Convert to UserData format with status
-          const formattedUsers: UserData[] = parsedUsers.map((u: any) => ({
-            ...u,
-            createdAt: new Date(u.createdAt),
-            status: 'active' as UserStatus
-          }));
-          setUsers(formattedUsers);
-        } catch (error) {
-          console.error('Error parsing users data:', error);
-          toast({
-            title: "Error",
-            description: "Failed to load users data",
-            variant: "destructive"
-          });
-        }
+    // Fetch users from API
+    const fetchUsers = async () => {
+      try {
+        setIsLoading(true);
+        const response = await userAPI.getAllUsers();
+        
+        // Transform API response to match component's expected format
+        const formattedUsers: UserData[] = response.data.users.map((u: any) => ({
+          id: u._id,
+          name: u.name,
+          email: u.email,
+          role: u.role as UserRole,
+          subscriptionPlan: u.subscriptionPlan,
+          createdAt: new Date(u.createdAt),
+          status: 'active' as UserStatus
+        }));
+        
+        setUsers(formattedUsers);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load users data",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
-    loadUsers();
+    fetchUsers();
   }, [currentUser, isAdmin, navigate, toast]);
 
   // Filter users based on search term
@@ -113,7 +119,7 @@ const ManageUsers = () => {
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleDeleteUser = (id: string) => {
+  const handleDeleteUser = async (id: string) => {
     // Don't allow deletion of the current user
     if (currentUser?.id === id) {
       toast({
@@ -124,55 +130,64 @@ const ManageUsers = () => {
       return;
     }
     
-    // Update the users state
-    const updatedUsers = users.filter(user => user.id !== id);
-    setUsers(updatedUsers);
-    
-    // Save to localStorage
-    localStorage.setItem('fitnessUsers', JSON.stringify(
-      updatedUsers.map(u => ({
-        ...u,
-        createdAt: u.createdAt.toISOString()
-      }))
-    ));
-    
-    toast({
-      title: "User Deleted",
-      description: "The user has been successfully removed.",
-      variant: "default"
-    });
+    try {
+      // Delete user through API
+      await userAPI.deleteUser(id);
+      
+      // Update the local state after successful deletion
+      setUsers(users.filter(user => user.id !== id));
+      
+      toast({
+        title: "User Deleted",
+        description: "The user has been successfully removed.",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete user. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleToggleRole = (id: string) => {
-    const updatedUsers = users.map(user => {
-      if (user.id === id) {
-        const newRole = user.role === 'admin' ? 'user' : 'admin';
-        return {
-          ...user,
-          role: newRole as UserRole
-        };
-      }
-      return user;
-    });
-    
-    setUsers(updatedUsers);
-    
-    // Save to localStorage
-    localStorage.setItem('fitnessUsers', JSON.stringify(
-      updatedUsers.map(u => ({
-        ...u,
-        createdAt: u.createdAt.toISOString()
-      }))
-    ));
-    
-    const user = users.find(u => u.id === id);
-    const newRole = user?.role === 'admin' ? 'user' : 'admin';
-    
-    toast({
-      title: "Role Updated",
-      description: `User is now a ${newRole}.`,
-      variant: "default"
-    });
+  const handleToggleRole = async (id: string) => {
+    try {
+      const user = users.find(u => u.id === id);
+      if (!user) return;
+      
+      const newRole = user.role === 'admin' ? 'user' : 'admin';
+      
+      // Update role through API
+      await userAPI.updateUserRole(id, newRole as UserRole);
+      
+      // Update local state after successful update
+      const updatedUsers = users.map(user => {
+        if (user.id === id) {
+          return {
+            ...user,
+            role: newRole as UserRole
+          };
+        }
+        return user;
+      });
+      
+      setUsers(updatedUsers);
+      
+      toast({
+        title: "Role Updated",
+        description: `User is now a ${newRole}.`,
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Error updating user role:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update user role. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleToggleStatus = (id: string) => {
@@ -188,18 +203,6 @@ const ManageUsers = () => {
     });
     
     setUsers(updatedUsers);
-    
-    // Save to localStorage (excluding status as it's not part of the original data structure)
-    localStorage.setItem('fitnessUsers', JSON.stringify(
-      updatedUsers.map(u => {
-        // Extract only the fields needed for storage
-        const { status, ...rest } = u;
-        return {
-          ...rest,
-          createdAt: u.createdAt.toISOString()
-        };
-      })
-    ));
     
     const user = users.find(u => u.id === id);
     const newStatus = user?.status === 'active' ? 'inactive' : 'active';
