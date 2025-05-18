@@ -1,46 +1,108 @@
+
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { FormInput } from "@/components/ui/custom/FormInput";
+import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
+import { useUser } from "@/contexts/UserContext";
+
 const Signup = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const {
-    toast
-  } = useToast();
-  const handleSubmit = (e: React.FormEvent) => {
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  
+  const { toast } = useToast();
+  const { signup } = useUser();
+  const navigate = useNavigate();
+  
+  const validateForm = () => {
+    const newErrors: {[key: string]: string} = {};
+    
+    if (name.trim().length < 2) {
+      newErrors.name = "Name must be at least 2 characters";
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+    
+    const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,}$/;
+    if (!passwordRegex.test(password)) {
+      newErrors.password = "Password must be at least 8 characters with a number and special character";
+    }
+    
+    if (!acceptedTerms) {
+      newErrors.terms = "You must accept the terms and conditions";
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setIsLoading(true);
 
-    // Simulate registration process
-    setTimeout(() => {
-      toast({
-        title: "Account created!",
-        description: "Welcome to FitnessFreaks"
-      });
+    try {
+      await signup(name, email, password);
+      
+      // Redirect to login page with a state flag to show success message
+      navigate('/login', { state: { fromSignup: true } });
+      
+    } catch (error) {
+      // If the error is about email already in use
+      if ((error as Error).message.includes('Email already in use')) {
+        setErrors({
+          ...errors,
+          email: "This email is already registered"
+        });
+      } else {
+        toast({
+          title: "Sign up failed",
+          description: "There was a problem creating your account.",
+          variant: "destructive"
+        });
+      }
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
-  return <div className="flex min-h-screen items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md">
+  
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+      <motion.div 
+        className="w-full max-w-md"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         <div className="flex justify-center mb-8">
           <Link to="/" className="flex items-center gap-2">
             <div className="relative h-10 w-10 overflow-hidden rounded-full bg-fitness-primary">
               <span className="absolute inset-0 flex items-center justify-center font-heading font-bold text-white">FF</span>
             </div>
-            <span className="font-heading text-2xl font-bold tracking-tight text-slate-900">
+            <span className="font-heading text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
               FitnessFreaks
             </span>
           </Link>
         </div>
         
-        <Card>
+        <Card className="border-2 overflow-hidden">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">Create an account</CardTitle>
             <CardDescription className="text-center">
@@ -49,38 +111,79 @@ const Signup = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input id="name" type="text" placeholder="John Doe" value={name} onChange={e => setName(e.target.value)} required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="m@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
-                <p className="text-xs text-gray-500">
-                  Password must be at least 8 characters long and include a number and a special character.
-                </p>
-              </div>
+              <FormInput
+                label="Full Name"
+                id="name"
+                type="text"
+                placeholder="John Doe"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                error={errors.name}
+                required
+              />
+              
+              <FormInput
+                label="Email"
+                id="email"
+                type="email"
+                placeholder="m@example.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                error={errors.email}
+                required
+              />
+              
+              <FormInput
+                label="Password"
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                error={errors.password}
+                description="Password must be at least 8 characters long and include a number and a special character."
+                required
+              />
               
               <div className="flex items-center space-x-2">
-                <Checkbox id="terms" />
-                <Label htmlFor="terms" className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                  I agree to the{" "}
-                  <Link to="/terms" className="text-fitness-primary hover:text-fitness-secondary">
-                    Terms of Service
-                  </Link>{" "}
-                  and{" "}
-                  <Link to="/privacy" className="text-fitness-primary hover:text-fitness-secondary">
-                    Privacy Policy
-                  </Link>
-                </Label>
+                <Checkbox 
+                  id="terms" 
+                  checked={acceptedTerms}
+                  onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
+                />
+                <div className="grid gap-1.5 leading-none">
+                  <Label 
+                    htmlFor="terms" 
+                    className={`text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${errors.terms ? 'text-destructive' : ''}`}
+                  >
+                    I agree to the{" "}
+                    <Link to="/terms" className="text-fitness-primary hover:text-fitness-secondary">
+                      Terms of Service
+                    </Link>{" "}
+                    and{" "}
+                    <Link to="/privacy" className="text-fitness-primary hover:text-fitness-secondary">
+                      Privacy Policy
+                    </Link>
+                  </Label>
+                  {errors.terms && (
+                    <p className="text-xs text-destructive">{errors.terms}</p>
+                  )}
+                </div>
               </div>
               
-              <Button type="submit" className="w-full bg-fitness-primary hover:bg-fitness-secondary" disabled={isLoading}>
-                {isLoading ? "Creating account..." : "Create account"}
+              <Button 
+                type="submit" 
+                className="w-full bg-fitness-primary hover:bg-fitness-secondary" 
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating account...
+                  </>
+                ) : (
+                  "Create account"
+                )}
               </Button>
             </form>
             
@@ -117,7 +220,9 @@ const Signup = () => {
             </p>
           </CardFooter>
         </Card>
-      </div>
-    </div>;
+      </motion.div>
+    </div>
+  );
 };
+
 export default Signup;

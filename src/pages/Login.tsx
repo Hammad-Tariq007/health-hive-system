@@ -1,44 +1,85 @@
+
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/contexts/UserContext";
+import { FormInput } from "@/components/ui/custom/FormInput";
+import { motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
+
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const {
-    toast
-  } = useToast();
-  const handleSubmit = (e: React.FormEvent) => {
+  const { toast } = useToast();
+  const { login } = useUser();
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Check if there was a registration success message
+  const fromSignup = location.state?.fromSignup || false;
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate authentication process
-    setTimeout(() => {
+    try {
+      await login(email, password);
+      
       toast({
         title: "Login successful!",
         description: "Welcome back to FitnessFreaks"
       });
+      
+      navigate('/');
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Login failed",
+        description: "Invalid email or password"
+      });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
-  return <div className="flex min-h-screen items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md">
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+      <motion.div 
+        className="w-full max-w-md"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         <div className="flex justify-center mb-8">
           <Link to="/" className="flex items-center gap-2">
             <div className="relative h-10 w-10 overflow-hidden rounded-full bg-fitness-primary">
               <span className="absolute inset-0 flex items-center justify-center font-heading font-bold text-white">FF</span>
             </div>
-            <span className="font-heading text-2xl font-bold tracking-tight text-slate-900">
+            <span className="font-heading text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
               FitnessFreaks
             </span>
           </Link>
         </div>
         
-        <Card>
+        {fromSignup && (
+          <motion.div
+            className="mb-4 p-4 rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-400"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            transition={{ duration: 0.3 }}
+          >
+            <p className="text-sm font-medium text-center">
+              Account created successfully! Please sign in with your new credentials.
+            </p>
+          </motion.div>
+        )}
+        
+        <Card className="border-2 overflow-hidden">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">Login</CardTitle>
             <CardDescription className="text-center">
@@ -47,10 +88,17 @@ const Login = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="m@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
-              </div>
+              <FormInput
+                label="Email"
+                type="email"
+                id="email"
+                placeholder="m@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+              />
+              
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Password</Label>
@@ -58,10 +106,30 @@ const Login = () => {
                     Forgot password?
                   </Link>
                 </div>
-                <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
+                <Input 
+                  id="password" 
+                  type="password" 
+                  placeholder="••••••••" 
+                  value={password} 
+                  onChange={e => setPassword(e.target.value)} 
+                  required 
+                  autoComplete="current-password"
+                />
               </div>
-              <Button type="submit" className="w-full bg-fitness-primary hover:bg-fitness-secondary" disabled={isLoading}>
-                {isLoading ? "Signing in..." : "Sign in"}
+              
+              <Button 
+                type="submit" 
+                className="w-full bg-fitness-primary hover:bg-fitness-secondary" 
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  "Sign in"
+                )}
               </Button>
             </form>
             
@@ -98,7 +166,9 @@ const Login = () => {
             </p>
           </CardFooter>
         </Card>
-      </div>
-    </div>;
+      </motion.div>
+    </div>
+  );
 };
+
 export default Login;

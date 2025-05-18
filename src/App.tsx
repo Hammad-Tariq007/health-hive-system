@@ -20,6 +20,11 @@ import UserDashboard from "./pages/UserDashboard";
 import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
 import BmiCalculator from "./pages/BmiCalculator";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import ManageUsers from "./pages/admin/ManageUsers";
+import ManageWorkouts from "./pages/admin/ManageWorkouts";
+import ManageNutrition from "./pages/admin/ManageNutrition";
+import ManageBlog from "./pages/admin/ManageBlog";
 
 // Import all the new pages
 import AboutUs from "./pages/AboutUs";
@@ -33,49 +38,61 @@ import Cookies from "./pages/Cookies";
 import Accessibility from "./pages/Accessibility";
 import GDPR from "./pages/GDPR";
 
+// Import user context
+import { UserProvider } from "./contexts/UserContext";
+
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <ScrollToTop />
-        <Routes>
-          <Route element={<Layout />}>
-            <Route path="/" element={<Index />} />
-            <Route path="/workouts" element={<Workouts />} />
-            <Route path="/workouts/:id" element={<WorkoutDetail />} />
-            <Route path="/progress" element={<Progress />} />
-            <Route path="/nutrition" element={<Nutrition />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/community" element={<Community />} />
-            <Route path="/dashboard" element={<UserDashboard />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/edit-profile" element={<EditProfile />} />
-            <Route path="/bmi-calculator" element={<BmiCalculator />} />
-            
-            {/* Company Pages */}
-            <Route path="/about" element={<AboutUs />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/careers" element={<Careers />} />
-            <Route path="/press" element={<Press />} />
-            <Route path="/partners" element={<Partners />} />
-            
-            {/* Legal Pages */}
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/cookies" element={<Cookies />} />
-            <Route path="/accessibility" element={<Accessibility />} />
-            <Route path="/gdpr" element={<GDPR />} />
-          </Route>
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <UserProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <ScrollToTop />
+          <Routes>
+            <Route element={<Layout />}>
+              <Route path="/" element={<Index />} />
+              <Route path="/workouts" element={<Workouts />} />
+              <Route path="/workouts/:id" element={<WorkoutDetail />} />
+              <Route path="/progress" element={<Progress />} />
+              <Route path="/nutrition" element={<Nutrition />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/community" element={<Community />} />
+              <Route path="/dashboard" element={<UserDashboard />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/edit-profile" element={<EditProfile />} />
+              <Route path="/bmi-calculator" element={<BmiCalculator />} />
+              
+              {/* Admin Routes */}
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/users" element={<ManageUsers />} />
+              <Route path="/admin/workouts" element={<ManageWorkouts />} />
+              <Route path="/admin/nutrition" element={<ManageNutrition />} />
+              <Route path="/admin/blog" element={<ManageBlog />} />
+              
+              {/* Company Pages */}
+              <Route path="/about" element={<AboutUs />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/careers" element={<Careers />} />
+              <Route path="/press" element={<Press />} />
+              <Route path="/partners" element={<Partners />} />
+              
+              {/* Legal Pages */}
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/cookies" element={<Cookies />} />
+              <Route path="/accessibility" element={<Accessibility />} />
+              <Route path="/gdpr" element={<GDPR />} />
+            </Route>
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </UserProvider>
   </QueryClientProvider>
 );
 

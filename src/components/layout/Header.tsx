@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Menu, X, User, Sun, Moon } from "lucide-react";
+import { Menu, X, User, Sun, Moon, Shield } from "lucide-react";
 import { useIsMobile } from '@/hooks/use-mobile';
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from '@/lib/utils';
@@ -13,6 +14,9 @@ import {
   NavigationMenuTrigger,
   NavigationMenuContent,
 } from "@/components/ui/navigation-menu";
+
+import { useUser } from '@/contexts/UserContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface HeaderProps {
   scrolled?: boolean;
@@ -31,6 +35,9 @@ const Header = ({ scrolled = false }: HeaderProps) => {
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout, isAdmin } = useUser();
+  const { toast } = useToast();
 
   // Apply dark mode on initial load and when toggled
   useEffect(() => {
@@ -48,6 +55,15 @@ const Header = ({ scrolled = false }: HeaderProps) => {
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
+  };
+
+  const handleLogout = () => {
+    logout();
+    toast({ 
+      title: "Logged out successfully", 
+      description: "You have been logged out of your account."
+    });
+    navigate('/');
   };
 
   // Close mobile menu when route changes
@@ -149,6 +165,24 @@ const Header = ({ scrolled = false }: HeaderProps) => {
                   </NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
+              
+              {/* Admin Button - Only visible for admin users */}
+              {isAdmin() && (
+                <NavigationMenuItem>
+                  <Link to="/admin">
+                    <NavigationMenuLink className="group inline-flex h-9 w-max items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50 relative">
+                      <Shield className="mr-1 h-4 w-4" />
+                      Admin
+                      {location.pathname.startsWith('/admin') && (
+                        <motion.div
+                          className="absolute -bottom-1 left-0 h-0.5 w-full bg-fitness-primary"
+                          layoutId="navunderline"
+                        />
+                      )}
+                    </NavigationMenuLink>
+                  </Link>
+                </NavigationMenuItem>
+              )}
             </NavigationMenuList>
           </NavigationMenu>
         ) : null}
@@ -197,28 +231,44 @@ const Header = ({ scrolled = false }: HeaderProps) => {
             whileHover={{ scale: 1.05 }}
             className="rounded-full"
           >
-            <Link to="/profile">
+            <Link to={user ? "/profile" : "/login"}>
               <Button variant="ghost" size="icon" className="rounded-full">
                 <User className="h-5 w-5" />
-                <span className="sr-only">Profile</span>
+                <span className="sr-only">{user ? "Profile" : "Login"}</span>
               </Button>
             </Link>
           </motion.div>
           
-          <motion.div
-            whileTap={{ scale: 0.95 }}
-            whileHover={{ scale: 1.05 }}
-          >
-            <Link to="/login">
+          {user ? (
+            <motion.div
+              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.05 }}
+            >
               <Button 
                 variant="default" 
                 size="sm" 
                 className="hidden bg-fitness-primary hover:bg-fitness-secondary sm:flex"
+                onClick={handleLogout}
               >
-                Sign In
+                Logout
               </Button>
-            </Link>
-          </motion.div>
+            </motion.div>
+          ) : (
+            <motion.div
+              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.05 }}
+            >
+              <Link to="/login">
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  className="hidden bg-fitness-primary hover:bg-fitness-secondary sm:flex"
+                >
+                  Sign In
+                </Button>
+              </Link>
+            </motion.div>
+          )}
 
           {isMobile && (
             <Button variant="ghost" size="icon" onClick={toggleMenu} aria-label="Menu">
@@ -276,7 +326,31 @@ const Header = ({ scrolled = false }: HeaderProps) => {
                 <MobileNavLink to="/progress">Progress</MobileNavLink>
                 <MobileNavLink to="/community">Community</MobileNavLink>
                 <MobileNavLink to="/blog">Blog</MobileNavLink>
-                <MobileNavLink to="/login">Sign In</MobileNavLink>
+                
+                {isAdmin() && (
+                  <MobileNavLink to="/admin">Admin Dashboard</MobileNavLink>
+                )}
+                
+                {user ? (
+                  <>
+                    <MobileNavLink to="/profile">Profile</MobileNavLink>
+                    <motion.div
+                      variants={{
+                        open: { opacity: 1, y: 0 },
+                        closed: { opacity: 0, y: -10 }
+                      }}
+                    >
+                      <Button 
+                        className="w-full bg-fitness-primary hover:bg-fitness-secondary" 
+                        onClick={handleLogout}
+                      >
+                        Logout
+                      </Button>
+                    </motion.div>
+                  </>
+                ) : (
+                  <MobileNavLink to="/login">Sign In</MobileNavLink>
+                )}
               </div>
             </motion.nav>
           </motion.div>
