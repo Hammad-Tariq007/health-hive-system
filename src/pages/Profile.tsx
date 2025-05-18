@@ -1,972 +1,356 @@
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { 
-  CalendarDays, 
-  Clock, 
-  Trophy, 
-  Dumbbell, 
-  Apple, 
-  HeartPulse, 
-  Settings,
-  Edit,
-  Calculator,
-  Trash2,
-  PieChart,
-  Bell,
-  LogOut,
-  Lock,
-  Eye,
-  AlertCircle,
-  Check,
-  User
-} from "lucide-react";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/contexts/UserContext";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { motion } from "framer-motion";
+import { Edit, User, LineChart, Apple, Dumbbell } from "lucide-react";
+import SubscriptionCard from "@/components/profile/SubscriptionCard";
 
-// Import the Mail icon correctly from lucide-react
-import { Mail as MailIcon } from "lucide-react";
+// Import necessary components
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
 
-// Define workout history type
-interface WorkoutHistoryItem {
-  id: string;
-  title: string;
-  date: Date;
-  duration: number;
-  type: string;
-  caloriesBurned: number;
-}
-
-// Define nutrition plan type
-interface NutritionPlanItem {
-  id: string;
-  name: string;
-  type: string;
-  macros: {
-    protein: number;
-    carbs: number;
-    fats: number;
-  };
-  startDate: Date;
-  endDate?: Date;
-  isActive: boolean;
-}
+// Import data for mock workout history
+import { workouts } from "@/data/workouts";
+import { nutrition } from "@/data/nutrition";
 
 const Profile = () => {
-  const [activeTab, setActiveTab] = useState("overview");
-  const { user, logout, isAdmin } = useUser();
-  const navigate = useNavigate();
+  const { user, isLoading } = useUser();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
-  // State for workout history
-  const [workoutHistory, setWorkoutHistory] = useState<WorkoutHistoryItem[]>([
-    {
-      id: "w1",
-      title: "Upper Body Strength",
-      date: new Date(Date.now() - 86400000), // yesterday
-      duration: 45,
-      type: "Strength",
-      caloriesBurned: 320
-    },
-    {
-      id: "w2",
-      title: "HIIT Cardio",
-      date: new Date(Date.now() - 86400000 * 3), // 3 days ago
-      duration: 30,
-      type: "Cardio",
-      caloriesBurned: 450
-    },
-    {
-      id: "w3",
-      title: "Lower Body Focus",
-      date: new Date(Date.now() - 86400000 * 5), // 5 days ago
-      duration: 50,
-      type: "Strength",
-      caloriesBurned: 380
-    },
-    {
-      id: "w4",
-      title: "Full Body Workout",
-      date: new Date(Date.now() - 86400000 * 7), // 7 days ago
-      duration: 60,
-      type: "Mixed",
-      caloriesBurned: 520
-    }
-  ]);
-  
-  // State for nutrition plans
-  const [nutritionPlans, setNutritionPlans] = useState<NutritionPlanItem[]>([
-    {
-      id: "n1",
-      name: "High Protein Plan",
-      type: "Muscle Gain",
-      macros: {
-        protein: 40,
-        carbs: 40,
-        fats: 20
-      },
-      startDate: new Date(Date.now() - 86400000 * 14), // 2 weeks ago
-      isActive: true
-    },
-    {
-      id: "n2",
-      name: "Keto Diet",
-      type: "Weight Loss",
-      macros: {
-        protein: 30,
-        carbs: 10,
-        fats: 60
-      },
-      startDate: new Date(Date.now() - 86400000 * 60), // 60 days ago
-      endDate: new Date(Date.now() - 86400000 * 30), // 30 days ago
-      isActive: false
-    }
-  ]);
-  
-  // State for notifications settings
-  const [notificationSettings, setNotificationSettings] = useState({
-    workoutReminders: true,
-    achievementAlerts: true,
-    newsletterEmails: false,
-    appUpdates: true
-  });
-  
-  // Redirect if not logged in
+  // Check if user is logged in, if not redirect to login
   useEffect(() => {
-    if (!user) {
+    if (!user && !isLoading) {
       toast({
-        title: "Authentication required",
-        description: "Please log in to access your profile",
+        title: "Access Denied",
+        description: "Please log in to view your profile",
         variant: "destructive"
       });
       navigate('/login');
     }
-  }, [user, navigate, toast]);
+  }, [user, isLoading, navigate, toast]);
 
-  const handleDeleteWorkout = (id: string) => {
-    setWorkoutHistory(prev => prev.filter(workout => workout.id !== id));
-    
-    toast({
-      title: "Workout Deleted",
-      description: "The workout has been removed from your history.",
-      variant: "default"
-    });
+  // Mock data for user progress
+  const progressData = {
+    weight: {
+      current: user?.weight || 0,
+      goal: 70,
+      progress: ((user?.weight || 0) / 70) * 100
+    },
+    workoutsCompleted: 12,
+    calories: {
+      goal: 2000,
+      consumed: 1650
+    }
   };
-  
-  const handleToggleNutritionPlan = (id: string) => {
-    setNutritionPlans(prev => prev.map(plan => {
-      if (plan.id === id) {
-        return {
-          ...plan,
-          isActive: !plan.isActive
-        };
-      }
-      return plan;
-    }));
-    
-    const plan = nutritionPlans.find(p => p.id === id);
-    
-    toast({
-      title: plan?.isActive ? "Plan Deactivated" : "Plan Activated",
-      description: `${plan?.name} has been ${plan?.isActive ? 'deactivated' : 'activated'}.`,
-      variant: "default"
-    });
-  };
-  
-  const handleDeleteNutritionPlan = (id: string) => {
-    setNutritionPlans(prev => prev.filter(plan => plan.id !== id));
-    
-    toast({
-      title: "Nutrition Plan Deleted",
-      description: "The plan has been removed from your list.",
-      variant: "default"
-    });
-  };
-  
-  const handleToggleNotification = (setting: keyof typeof notificationSettings) => {
-    setNotificationSettings(prev => ({
-      ...prev,
-      [setting]: !prev[setting]
-    }));
-    
-    toast({
-      title: "Settings Updated",
-      description: `Notification preference updated.`,
-      variant: "default"
-    });
-  };
-  
-  const handleLogout = () => {
-    logout();
-    toast({
-      title: "Logged Out",
-      description: "You have been successfully logged out.",
-      variant: "default"
-    });
-    navigate('/');
-  };
-  
-  const handleDeleteAccount = () => {
-    logout();
-    toast({
-      title: "Account Deleted",
-      description: "Your account has been successfully deleted.",
-      variant: "default"
-    });
-    navigate('/');
-  };
-  
-  // If no user, show loading or placeholder
-  if (!user) {
+
+  // Mock workout history
+  const workoutHistory = [
+    { id: '1', name: 'Full Body HIIT', date: '2023-05-15', duration: 45 },
+    { id: '2', name: 'Upper Body Strength', date: '2023-05-12', duration: 40 },
+    { id: '3', name: 'Yoga Flow', date: '2023-05-10', duration: 30 },
+    { id: '4', name: 'Core Crusher', date: '2023-05-08', duration: 20 },
+    { id: '5', name: 'Leg Day Challenge', date: '2023-05-05', duration: 50 }
+  ];
+
+  // Mock nutrition plans
+  const nutritionPlans = [
+    { id: '1', name: 'Balanced Diet', startDate: '2023-05-01', endDate: '2023-06-01', calories: 2000 },
+    { id: '2', name: 'High Protein', startDate: '2023-04-01', endDate: '2023-05-01', calories: 2200 },
+    { id: '3', name: 'Low Carb', startDate: '2023-03-01', endDate: '2023-04-01', calories: 1800 }
+  ];
+
+  if (isLoading || !user) {
     return (
-      <div className="container py-10 mx-auto">
-        <div className="flex justify-center">
-          <div className="w-12 h-12 border-4 border-fitness-primary border-t-transparent rounded-full animate-spin"></div>
-        </div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
       </div>
     );
   }
-  
+
   return (
-    <div className="container py-10 mx-auto">
-      <motion.div
+    <div className="container py-10 px-4 md:px-6">
+      <motion.div 
+        className="max-w-6xl mx-auto"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.3 }}
       >
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          {/* Profile Sidebar */}
-          <div className="md:col-span-1">
-            <Card className="glass">
-              <CardContent className="flex flex-col items-center p-6 text-center">
-                <div className="relative">
-                  <Avatar className="h-32 w-32 border-4 border-fitness-primary">
-                    <AvatarImage src="https://images.unsplash.com/photo-1607990281513-2c110a25bd8c?q=80&w=1634&auto=format&fit=crop" />
-                    <AvatarFallback>{user.name.substring(0, 2)}</AvatarFallback>
+        <div className="flex flex-col md:flex-row gap-8 items-start">
+          {/* Left Column: User Info */}
+          <div className="flex flex-col gap-6 w-full md:w-1/3">
+            <Card>
+              <CardHeader className="pb-2">
+                <div className="flex justify-between items-start">
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src="" />
+                    <AvatarFallback className="text-2xl bg-fitness-primary text-white">
+                      {user.name.charAt(0)}
+                    </AvatarFallback>
                   </Avatar>
                   <Link to="/edit-profile">
-                    <Button 
-                      size="icon" 
-                      variant="outline" 
-                      className="absolute bottom-0 right-0 rounded-full bg-background"
-                    >
+                    <Button variant="ghost" size="icon">
                       <Edit className="h-4 w-4" />
                     </Button>
                   </Link>
                 </div>
-                
-                <h2 className="mt-4 text-2xl font-bold">{user.name}</h2>
-                <p className="text-muted-foreground">@{user.name.toLowerCase().replace(/\s+/g, '')}</p>
-                
-                <Badge className="mt-3 bg-fitness-primary">
-                  {isAdmin() ? "Admin" : "Premium Member"}
-                </Badge>
-                
-                <div className="mt-6 grid grid-cols-3 gap-4 w-full">
-                  <div className="flex flex-col items-center">
-                    <p className="font-bold text-2xl">{workoutHistory.length}</p>
-                    <p className="text-xs text-muted-foreground">Workouts</p>
+                <CardTitle className="text-2xl mt-2">{user.name}</CardTitle>
+                <CardDescription>{user.email}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Gender:</span>
+                    <span>{user.gender || 'Not specified'}</span>
                   </div>
-                  <div className="flex flex-col items-center">
-                    <p className="font-bold text-2xl">12</p>
-                    <p className="text-xs text-muted-foreground">Weeks</p>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Age:</span>
+                    <span>{user.age || 'Not specified'}</span>
                   </div>
-                  <div className="flex flex-col items-center">
-                    <p className="font-bold text-2xl">5</p>
-                    <p className="text-xs text-muted-foreground">Badges</p>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Height:</span>
+                    <span>{user.height ? `${user.height} cm` : 'Not specified'}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Weight:</span>
+                    <span>{user.weight ? `${user.weight} kg` : 'Not specified'}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Member Since:</span>
+                    <span>{user.createdAt.toLocaleDateString()}</span>
                   </div>
                 </div>
-                
-                <Link to="/edit-profile" className="mt-6 w-full">
+              </CardContent>
+              <CardFooter>
+                <Link to="/edit-profile" className="w-full">
                   <Button variant="default" className="w-full bg-fitness-primary hover:bg-fitness-secondary">
                     Edit Profile
                   </Button>
                 </Link>
-                
-                <div className="mt-4 w-full">
-                  <Link to="/bmi-calculator" className="w-full">
-                    <Button variant="outline" className="w-full border-fitness-primary text-fitness-primary hover:bg-fitness-primary/10">
-                      <Calculator className="mr-2 h-4 w-4" />
-                      BMI Calculator
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
+              </CardFooter>
             </Card>
             
-            <Card className="glass mt-6">
-              <CardHeader>
-                <CardTitle className="text-lg">Current Goals</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Weight Loss</span>
-                    <span className="font-medium">70%</span>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-muted">
-                    <div className="h-full w-[70%] rounded-full bg-fitness-primary"></div>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Muscle Gain</span>
-                    <span className="font-medium">45%</span>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-muted">
-                    <div className="h-full w-[45%] rounded-full bg-fitness-secondary"></div>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Cardio Endurance</span>
-                    <span className="font-medium">85%</span>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-muted">
-                    <div className="h-full w-[85%] rounded-full bg-green-500"></div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Subscription Card */}
+            <SubscriptionCard 
+              plan={user.subscriptionPlan || 'free'} 
+              subscriptionDate={user.subscriptionDate}
+            />
           </div>
-          
-          {/* Main Content */}
-          <div className="md:col-span-2">
-            <Tabs 
-              defaultValue="overview" 
-              value={activeTab} 
-              onValueChange={setActiveTab} 
-              className="w-full"
-            >
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="workouts">Workouts</TabsTrigger>
-                <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
-                <TabsTrigger value="settings">Settings</TabsTrigger>
+
+          {/* Right Column: Tabs Content */}
+          <div className="w-full md:w-2/3">
+            <Tabs defaultValue="progress">
+              <TabsList className="grid grid-cols-3 mb-8">
+                <TabsTrigger value="progress" className="data-[state=active]:bg-fitness-primary data-[state=active]:text-white">
+                  <LineChart className="h-4 w-4 mr-2" />
+                  Progress
+                </TabsTrigger>
+                <TabsTrigger value="workouts" className="data-[state=active]:bg-fitness-primary data-[state=active]:text-white">
+                  <Dumbbell className="h-4 w-4 mr-2" />
+                  Workout History
+                </TabsTrigger>
+                <TabsTrigger value="nutrition" className="data-[state=active]:bg-fitness-primary data-[state=active]:text-white">
+                  <Apple className="h-4 w-4 mr-2" />
+                  Nutrition
+                </TabsTrigger>
               </TabsList>
-              
-              <TabsContent value="overview" className="mt-6">
-                <Card className="glass">
+
+              {/* Progress Tab */}
+              <TabsContent value="progress" className="space-y-6">
+                <Card>
                   <CardHeader>
-                    <CardTitle className="text-xl">Weekly Summary</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                      <div className="flex flex-col items-center justify-center rounded-lg bg-accent p-4">
-                        <Dumbbell className="h-8 w-8 text-fitness-primary mb-2" />
-                        <p className="text-2xl font-bold">4</p>
-                        <p className="text-xs text-muted-foreground">Workouts</p>
-                      </div>
-                      <div className="flex flex-col items-center justify-center rounded-lg bg-accent p-4">
-                        <Clock className="h-8 w-8 text-fitness-secondary mb-2" />
-                        <p className="text-2xl font-bold">3.5</p>
-                        <p className="text-xs text-muted-foreground">Hours</p>
-                      </div>
-                      <div className="flex flex-col items-center justify-center rounded-lg bg-accent p-4">
-                        <HeartPulse className="h-8 w-8 text-red-500 mb-2" />
-                        <p className="text-2xl font-bold">2.4k</p>
-                        <p className="text-xs text-muted-foreground">Calories</p>
-                      </div>
-                      <div className="flex flex-col items-center justify-center rounded-lg bg-accent p-4">
-                        <Apple className="h-8 w-8 text-green-500 mb-2" />
-                        <p className="text-2xl font-bold">85%</p>
-                        <p className="text-xs text-muted-foreground">Nutrition</p>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-6">
-                      <h3 className="font-medium mb-3">Recent Activity</h3>
-                      <div className="space-y-4">
-                        <div className="flex items-start gap-4">
-                          <div className="rounded-full bg-fitness-primary/10 p-2">
-                            <Dumbbell className="h-4 w-4 text-fitness-primary" />
-                          </div>
-                          <div>
-                            <p className="font-medium">Completed Upper Body Workout</p>
-                            <div className="flex items-center text-sm text-muted-foreground">
-                              <CalendarDays className="mr-1 h-3 w-3" />
-                              <span>Yesterday at 7:30 AM</span>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-start gap-4">
-                          <div className="rounded-full bg-green-500/10 p-2">
-                            <Apple className="h-4 w-4 text-green-500" />
-                          </div>
-                          <div>
-                            <p className="font-medium">Logged Nutrition Plan</p>
-                            <div className="flex items-center text-sm text-muted-foreground">
-                              <CalendarDays className="mr-1 h-3 w-3" />
-                              <span>2 days ago at 8:15 PM</span>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-start gap-4">
-                          <div className="rounded-full bg-yellow-500/10 p-2">
-                            <Trophy className="h-4 w-4 text-yellow-500" />
-                          </div>
-                          <div>
-                            <p className="font-medium">Earned 7-Day Streak Badge</p>
-                            <div className="flex items-center text-sm text-muted-foreground">
-                              <CalendarDays className="mr-1 h-3 w-3" />
-                              <span>3 days ago</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="glass mt-6">
-                  <CardHeader>
-                    <CardTitle className="text-xl">Upcoming Schedule</CardTitle>
+                    <CardTitle>Weight Progress</CardTitle>
+                    <CardDescription>Track your weight journey</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between rounded-lg border p-3">
-                        <div className="flex items-center gap-3">
-                          <div className="rounded-full bg-fitness-primary p-2">
-                            <Dumbbell className="h-4 w-4 text-white" />
-                          </div>
-                          <div>
-                            <p className="font-medium">Full Body HIIT</p>
-                            <p className="text-sm text-muted-foreground">45 minutes • Advanced</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium">Tomorrow</p>
-                          <p className="text-sm text-muted-foreground">6:30 AM</p>
-                        </div>
+                      <div className="flex justify-between items-center">
+                        <span>Current: {progressData.weight.current} kg</span>
+                        <span>Goal: {progressData.weight.goal} kg</span>
                       </div>
-                      
-                      <div className="flex items-center justify-between rounded-lg border p-3">
-                        <div className="flex items-center gap-3">
-                          <div className="rounded-full bg-green-500 p-2">
-                            <Apple className="h-4 w-4 text-white" />
-                          </div>
-                          <div>
-                            <p className="font-medium">Nutrition Check-in</p>
-                            <p className="text-sm text-muted-foreground">Weekly progress review</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium">Friday</p>
-                          <p className="text-sm text-muted-foreground">12:00 PM</p>
-                        </div>
+                      <Progress value={progressData.weight.progress} className="h-2" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Activity Summary</CardTitle>
+                    <CardDescription>Last 30 days</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-muted p-4 rounded-lg text-center">
+                        <div className="text-3xl font-bold">{progressData.workoutsCompleted}</div>
+                        <div className="text-sm text-muted-foreground">Workouts Completed</div>
                       </div>
-                      
-                      <div className="flex items-center justify-between rounded-lg border p-3">
-                        <div className="flex items-center gap-3">
-                          <div className="rounded-full bg-blue-500 p-2">
-                            <Calculator className="h-4 w-4 text-white" />
-                          </div>
+                      <div className="bg-muted p-4 rounded-lg text-center">
+                        <div className="text-3xl font-bold">{progressData.calories.consumed}</div>
+                        <div className="text-sm text-muted-foreground">Avg. Daily Calories</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Fitness Goals</CardTitle>
+                    <CardDescription>Your current targets</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="flex justify-between">
+                      <div>Daily Steps</div>
+                      <div>8,000 / 10,000</div>
+                    </div>
+                    <Progress value={80} className="h-2" />
+                    
+                    <div className="flex justify-between mt-4">
+                      <div>Weekly Workouts</div>
+                      <div>3 / 5</div>
+                    </div>
+                    <Progress value={60} className="h-2" />
+                    
+                    <div className="flex justify-between mt-4">
+                      <div>Daily Water (Liters)</div>
+                      <div>1.5 / 2.5</div>
+                    </div>
+                    <Progress value={60} className="h-2" />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Workouts Tab */}
+              <TabsContent value="workouts" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Recent Workouts</CardTitle>
+                    <CardDescription>Your last 5 completed workouts</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {workoutHistory.map((workout) => (
+                        <div key={workout.id} className="flex justify-between items-center border-b pb-3">
                           <div>
-                            <p className="font-medium">BMI Assessment</p>
-                            <p className="text-sm text-muted-foreground">Monthly health check</p>
+                            <div className="font-medium">{workout.name}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {new Date(workout.date).toLocaleDateString()}
+                            </div>
                           </div>
+                          <div className="text-sm">{workout.duration} min</div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-medium">Sunday</p>
-                          <p className="text-sm text-muted-foreground">9:00 AM</p>
-                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Button variant="outline" className="w-full">View All History</Button>
+                  </CardFooter>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Workout Achievements</CardTitle>
+                    <CardDescription>Milestones you've reached</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-muted/50 p-4 rounded-lg text-center">
+                        <div className="text-xl font-bold">7</div>
+                        <div className="text-sm">Days Streak</div>
+                      </div>
+                      <div className="bg-muted/50 p-4 rounded-lg text-center">
+                        <div className="text-xl font-bold">35</div>
+                        <div className="text-sm">Total Workouts</div>
+                      </div>
+                      <div className="bg-muted/50 p-4 rounded-lg text-center">
+                        <div className="text-xl font-bold">1,050</div>
+                        <div className="text-sm">Minutes Active</div>
+                      </div>
+                      <div className="bg-muted/50 p-4 rounded-lg text-center">
+                        <div className="text-xl font-bold">3</div>
+                        <div className="text-sm">Badges Earned</div>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               </TabsContent>
-              
-              <TabsContent value="workouts" className="mt-6">
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Card className="glass mb-6">
-                    <CardHeader className="flex flex-row items-center justify-between">
-                      <CardTitle className="text-xl">Your Workout History</CardTitle>
-                      <Button variant="outline" size="sm">
-                        <PieChart className="h-4 w-4 mr-2" />
-                        View Stats
-                      </Button>
-                    </CardHeader>
-                    <CardContent>
-                      {workoutHistory.length > 0 ? (
-                        <div className="space-y-4">
-                          {workoutHistory.map((workout) => (
-                            <motion.div
-                              key={workout.id}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, height: 0 }}
-                              transition={{ duration: 0.2 }}
-                              className="flex items-center justify-between rounded-lg border p-4"
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className={`rounded-full p-2 ${
-                                  workout.type === 'Strength' ? 'bg-fitness-primary/10' :
-                                  workout.type === 'Cardio' ? 'bg-red-500/10' : 'bg-purple-500/10'
-                                }`}>
-                                  <Dumbbell className={`h-5 w-5 ${
-                                    workout.type === 'Strength' ? 'text-fitness-primary' :
-                                    workout.type === 'Cardio' ? 'text-red-500' : 'text-purple-500'
-                                  }`} />
-                                </div>
-                                <div>
-                                  <p className="font-medium">{workout.title}</p>
-                                  <div className="flex items-center text-sm text-muted-foreground">
-                                    <CalendarDays className="mr-1 h-3 w-3" />
-                                    <span>{workout.date.toLocaleDateString()}</span>
-                                    <Clock className="ml-2 mr-1 h-3 w-3" />
-                                    <span>{workout.duration} min</span>
-                                    <HeartPulse className="ml-2 mr-1 h-3 w-3" />
-                                    <span>{workout.caloriesBurned} cal</span>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="flex gap-2">
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="h-8 w-8"
-                                  onClick={() => handleDeleteWorkout(workout.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="h-8 w-8"
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </motion.div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center py-10">
-                          <Dumbbell className="h-12 w-12 text-muted-foreground mb-4" />
-                          <p className="text-lg font-medium mb-2">No Workout History</p>
-                          <p className="text-muted-foreground text-center mb-6">
-                            You haven't recorded any workouts yet. Start tracking your fitness journey!
-                          </p>
-                          <Button className="bg-fitness-primary hover:bg-fitness-secondary">
-                            Record a Workout
-                          </Button>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <Card className="glass">
-                      <CardHeader>
-                        <CardTitle className="text-lg">Workout Stats</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="rounded-full bg-fitness-primary/10 p-2">
-                              <Clock className="h-4 w-4 text-fitness-primary" />
-                            </div>
-                            <span>Total Time</span>
+
+              {/* Nutrition Tab */}
+              <TabsContent value="nutrition" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Active Nutrition Plans</CardTitle>
+                    <CardDescription>Your current meal plans</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {nutritionPlans.map((plan) => (
+                        <div key={plan.id} className="border p-4 rounded-lg">
+                          <div className="font-medium">{plan.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {new Date(plan.startDate).toLocaleDateString()} - {new Date(plan.endDate).toLocaleDateString()}
                           </div>
-                          <p className="font-bold">
-                            {workoutHistory.reduce((acc, workout) => acc + workout.duration, 0)} min
-                          </p>
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="rounded-full bg-red-500/10 p-2">
-                              <HeartPulse className="h-4 w-4 text-red-500" />
-                            </div>
-                            <span>Total Calories</span>
-                          </div>
-                          <p className="font-bold">
-                            {workoutHistory.reduce((acc, workout) => acc + workout.caloriesBurned, 0)}
-                          </p>
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="rounded-full bg-green-500/10 p-2">
-                              <Dumbbell className="h-4 w-4 text-green-500" />
-                            </div>
-                            <span>Most Common</span>
-                          </div>
-                          <p className="font-bold">Strength</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card className="glass">
-                      <CardHeader>
-                        <CardTitle className="text-lg">Suggested Workouts</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="rounded-lg border p-3 hover:bg-accent/50 cursor-pointer transition-colors">
-                          <p className="font-medium">30-Min HIIT Circuit</p>
-                          <p className="text-sm text-muted-foreground">Based on your recent activity</p>
-                        </div>
-                        <div className="rounded-lg border p-3 hover:bg-accent/50 cursor-pointer transition-colors">
-                          <p className="font-medium">Full Body Strength</p>
-                          <p className="text-sm text-muted-foreground">Recommended for your goals</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </motion.div>
-              </TabsContent>
-              
-              <TabsContent value="nutrition" className="mt-6">
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Card className="glass mb-6">
-                    <CardHeader className="flex flex-row items-center justify-between">
-                      <CardTitle className="text-xl">Your Nutrition Plans</CardTitle>
-                      <Button variant="outline" size="sm">
-                        <Apple className="h-4 w-4 mr-2" />
-                        Add New Plan
-                      </Button>
-                    </CardHeader>
-                    <CardContent>
-                      {nutritionPlans.length > 0 ? (
-                        <div className="space-y-4">
-                          {nutritionPlans.map((plan) => (
-                            <motion.div
-                              key={plan.id}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, height: 0 }}
-                              transition={{ duration: 0.2 }}
-                              className={`rounded-lg border p-4 ${plan.isActive ? 'border-green-500/30 bg-green-500/5' : ''}`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <div className={`rounded-full p-2 ${
-                                    plan.type === 'Muscle Gain' ? 'bg-fitness-primary/10' :
-                                    plan.type === 'Weight Loss' ? 'bg-blue-500/10' : 'bg-purple-500/10'
-                                  }`}>
-                                    <Apple className={`h-5 w-5 ${
-                                      plan.type === 'Muscle Gain' ? 'text-fitness-primary' :
-                                      plan.type === 'Weight Loss' ? 'text-blue-500' : 'text-purple-500'
-                                    }`} />
-                                  </div>
-                                  <div>
-                                    <div className="flex items-center gap-2">
-                                      <p className="font-medium">{plan.name}</p>
-                                      {plan.isActive && (
-                                        <Badge variant="outline" className="border-green-500 text-green-500">Active</Badge>
-                                      )}
-                                    </div>
-                                    <p className="text-sm text-muted-foreground">{plan.type}</p>
-                                  </div>
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className="h-8 w-8"
-                                    onClick={() => handleDeleteNutritionPlan(plan.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                  <Button 
-                                    variant={plan.isActive ? "default" : "outline"} 
-                                    size="sm"
-                                    className={plan.isActive ? "bg-green-500 hover:bg-green-600" : ""}
-                                    onClick={() => handleToggleNutritionPlan(plan.id)}
-                                  >
-                                    {plan.isActive ? (
-                                      <>
-                                        <Check className="h-4 w-4 mr-1" />
-                                        Active
-                                      </>
-                                    ) : "Activate"}
-                                  </Button>
-                                </div>
-                              </div>
-                              
-                              <div className="grid grid-cols-3 gap-2 mt-4">
-                                <div className="text-center p-2 bg-accent rounded-md">
-                                  <p className="text-xs text-muted-foreground">Protein</p>
-                                  <p className="font-bold">{plan.macros.protein}%</p>
-                                </div>
-                                <div className="text-center p-2 bg-accent rounded-md">
-                                  <p className="text-xs text-muted-foreground">Carbs</p>
-                                  <p className="font-bold">{plan.macros.carbs}%</p>
-                                </div>
-                                <div className="text-center p-2 bg-accent rounded-md">
-                                  <p className="text-xs text-muted-foreground">Fats</p>
-                                  <p className="font-bold">{plan.macros.fats}%</p>
-                                </div>
-                              </div>
-                              
-                              <div className="flex items-center text-sm text-muted-foreground mt-4">
-                                <CalendarDays className="mr-1 h-3 w-3" />
-                                <span>Started {plan.startDate.toLocaleDateString()}</span>
-                                {plan.endDate && (
-                                  <>
-                                    <span className="mx-1">•</span>
-                                    <span>Ended {plan.endDate.toLocaleDateString()}</span>
-                                  </>
-                                )}
-                              </div>
-                            </motion.div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center py-10">
-                          <Apple className="h-12 w-12 text-muted-foreground mb-4" />
-                          <p className="text-lg font-medium mb-2">No Nutrition Plans</p>
-                          <p className="text-muted-foreground text-center mb-6">
-                            You haven't added any nutrition plans yet. Start optimizing your diet!
-                          </p>
-                          <Button className="bg-fitness-primary hover:bg-fitness-secondary">
-                            Browse Nutrition Plans
-                          </Button>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <Card className="glass">
-                      <CardHeader>
-                        <CardTitle className="text-lg">Daily Nutrition Summary</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span>Calories</span>
-                              <span className="font-medium">1845 / 2200</span>
-                            </div>
-                            <div className="h-2 w-full rounded-full bg-muted">
-                              <div className="h-full w-[84%] rounded-full bg-green-500"></div>
-                            </div>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span>Protein</span>
-                              <span className="font-medium">110g / 140g</span>
-                            </div>
-                            <div className="h-2 w-full rounded-full bg-muted">
-                              <div className="h-full w-[78%] rounded-full bg-fitness-primary"></div>
-                            </div>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span>Water</span>
-                              <span className="font-medium">1.8L / 3.0L</span>
-                            </div>
-                            <div className="h-2 w-full rounded-full bg-muted">
-                              <div className="h-full w-[60%] rounded-full bg-blue-500"></div>
-                            </div>
+                          <div className="mt-2 text-sm">
+                            <span className="font-medium">Daily Target: </span> 
+                            {plan.calories} calories
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card className="glass">
-                      <CardHeader>
-                        <CardTitle className="text-lg">Meal Recommendations</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          <div className="rounded-lg border p-3 hover:bg-accent/50 cursor-pointer transition-colors">
-                            <p className="font-medium">Protein-rich breakfast</p>
-                            <p className="text-sm text-muted-foreground">Based on your current plan</p>
-                          </div>
-                          <div className="rounded-lg border p-3 hover:bg-accent/50 cursor-pointer transition-colors">
-                            <p className="font-medium">Post-workout smoothie</p>
-                            <p className="text-sm text-muted-foreground">Optimized for recovery</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </motion.div>
-              </TabsContent>
-              
-              <TabsContent value="settings" className="mt-6">
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Card className="glass mb-6">
-                    <CardHeader>
-                      <CardTitle className="text-xl">Account Settings</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Today's Nutrition</CardTitle>
+                    <CardDescription>Calories and macronutrients</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
                       <div>
-                        <h3 className="text-lg font-medium mb-4">Notifications</h3>
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Bell className="h-4 w-4 text-muted-foreground" />
-                              <Label htmlFor="workout-reminders">Workout Reminders</Label>
-                            </div>
-                            <Switch 
-                              id="workout-reminders" 
-                              checked={notificationSettings.workoutReminders}
-                              onCheckedChange={() => handleToggleNotification('workoutReminders')}
-                            />
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Trophy className="h-4 w-4 text-muted-foreground" />
-                              <Label htmlFor="achievement-alerts">Achievement Alerts</Label>
-                            </div>
-                            <Switch 
-                              id="achievement-alerts" 
-                              checked={notificationSettings.achievementAlerts}
-                              onCheckedChange={() => handleToggleNotification('achievementAlerts')}
-                            />
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <MailIcon className="h-4 w-4 text-muted-foreground" />
-                              <Label htmlFor="newsletter-emails">Newsletter Emails</Label>
-                            </div>
-                            <Switch 
-                              id="newsletter-emails" 
-                              checked={notificationSettings.newsletterEmails}
-                              onCheckedChange={() => handleToggleNotification('newsletterEmails')}
-                            />
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Bell className="h-4 w-4 text-muted-foreground" />
-                              <Label htmlFor="app-updates">App Updates</Label>
-                            </div>
-                            <Switch 
-                              id="app-updates" 
-                              checked={notificationSettings.appUpdates}
-                              onCheckedChange={() => handleToggleNotification('appUpdates')}
-                            />
-                          </div>
+                        <div className="flex justify-between mb-1">
+                          <span>Calories</span>
+                          <span>{progressData.calories.consumed} / {progressData.calories.goal}</span>
                         </div>
+                        <Progress value={(progressData.calories.consumed / progressData.calories.goal) * 100} className="h-2" />
                       </div>
                       
-                      <Separator />
-                      
-                      <div>
-                        <h3 className="text-lg font-medium mb-4">Privacy</h3>
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <User className="h-4 w-4 text-muted-foreground" />
-                              <Label htmlFor="public-profile">Public Profile</Label>
-                            </div>
-                            <Switch id="public-profile" defaultChecked />
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Lock className="h-4 w-4 text-muted-foreground" />
-                              <Label htmlFor="two-factor">Two-Factor Authentication</Label>
-                            </div>
-                            <Switch id="two-factor" />
-                          </div>
+                      <div className="grid grid-cols-3 gap-4 pt-2">
+                        <div className="space-y-1">
+                          <div className="text-sm text-muted-foreground">Protein</div>
+                          <div className="font-medium">120g</div>
+                          <Progress value={75} className="h-1.5" />
+                        </div>
+                        <div className="space-y-1">
+                          <div className="text-sm text-muted-foreground">Carbs</div>
+                          <div className="font-medium">180g</div>
+                          <Progress value={60} className="h-1.5" />
+                        </div>
+                        <div className="space-y-1">
+                          <div className="text-sm text-muted-foreground">Fat</div>
+                          <div className="font-medium">55g</div>
+                          <Progress value={80} className="h-1.5" />
                         </div>
                       </div>
-                      
-                      <Separator />
-                      
-                      <div className="flex flex-col gap-4">
-                        <h3 className="text-lg font-medium">Account Actions</h3>
-                        
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <Button 
-                            variant="outline" 
-                            className="border-orange-500 text-orange-500 hover:bg-orange-500/10"
-                            onClick={handleLogout}
-                          >
-                            <LogOut className="mr-2 h-4 w-4" />
-                            Log Out
-                          </Button>
-                          
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                className="border-destructive text-destructive hover:bg-destructive/10"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete Account
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This action cannot be undone. This will permanently delete your
-                                  account and remove your data from our servers.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction 
-                                  onClick={handleDeleteAccount}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                  Delete Account
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                        
-                        <div className="rounded-md bg-muted p-4 mt-2">
-                          <div className="flex items-start">
-                            <AlertCircle className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                            <div className="ml-3">
-                              <p className="text-sm text-muted-foreground">
-                                Deleting your account will remove all of your data and cannot be undone.
-                                Make sure to download any data you want to keep before proceeding.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Meal Planner</CardTitle>
+                    <CardDescription>Your personalized meal suggestions</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Link to="/nutrition" className="w-full">
+                      <Button className="w-full">View Meal Plans</Button>
+                    </Link>
+                  </CardContent>
+                </Card>
               </TabsContent>
             </Tabs>
           </div>

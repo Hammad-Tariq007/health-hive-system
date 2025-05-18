@@ -1,6 +1,8 @@
+
 import { createContext, useContext, useState, useEffect } from 'react';
 
 export type UserRole = 'user' | 'admin';
+export type SubscriptionPlan = 'free' | 'pro' | 'elite';
 
 export interface User {
   id: string;
@@ -12,6 +14,8 @@ export interface User {
   height?: number;
   weight?: number;
   createdAt: Date;
+  subscriptionPlan?: SubscriptionPlan;
+  subscriptionDate?: Date;
 }
 
 interface UserContextType {
@@ -22,6 +26,7 @@ interface UserContextType {
   logout: () => void;
   updateUser: (userData: Partial<User>) => Promise<void>;
   isAdmin: () => boolean;
+  updateSubscription: (plan: SubscriptionPlan) => Promise<void>;
 }
 
 export const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -38,7 +43,8 @@ const MOCK_USERS = [
     age: 28,
     height: 165,
     weight: 58,
-    createdAt: new Date('2023-05-01')
+    createdAt: new Date('2023-05-01'),
+    subscriptionPlan: 'pro' as SubscriptionPlan
   },
   {
     id: '2',
@@ -50,7 +56,8 @@ const MOCK_USERS = [
     age: 32,
     height: 180,
     weight: 75,
-    createdAt: new Date('2023-06-15')
+    createdAt: new Date('2023-06-15'),
+    subscriptionPlan: 'free' as SubscriptionPlan
   },
   // Add the special admin@gmail.com account as requested
   {
@@ -63,13 +70,23 @@ const MOCK_USERS = [
     age: 35,
     height: 175,
     weight: 70,
-    createdAt: new Date('2023-01-01')
+    createdAt: new Date('2023-01-01'),
+    subscriptionPlan: 'elite' as SubscriptionPlan
   }
 ];
 
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [users, setUsers] = useState<Array<typeof MOCK_USERS[0]>>(
+    // Load users from localStorage if available, otherwise use the mock data
+    JSON.parse(localStorage.getItem('fitnessUsers') || JSON.stringify(MOCK_USERS))
+  );
+
+  // Save users to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('fitnessUsers', JSON.stringify(users));
+  }, [users]);
 
   // Check for saved user on initial load
   useEffect(() => {
@@ -80,7 +97,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         const parsedUser = JSON.parse(savedUser);
         setUser({
           ...parsedUser,
-          createdAt: new Date(parsedUser.createdAt)
+          createdAt: new Date(parsedUser.createdAt),
+          subscriptionDate: parsedUser.subscriptionDate ? new Date(parsedUser.subscriptionDate) : undefined
         });
       } catch (error) {
         console.error('Failed to parse saved user:', error);
@@ -99,7 +117,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       await new Promise(resolve => setTimeout(resolve, 800));
       
       // Find user with matching credentials
-      const foundUser = MOCK_USERS.find(u => 
+      const foundUser = users.find(u => 
         u.email.toLowerCase() === email.toLowerCase() && u.password === password
       );
       
@@ -130,32 +148,33 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       await new Promise(resolve => setTimeout(resolve, 800));
       
       // Check if user with this email already exists
-      const existingUser = MOCK_USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
+      const existingUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
       
       if (existingUser) {
         throw new Error('Email already in use');
       }
       
-      // In a real app, we would save this user to a database
-      // Here we're just simulating successful registration
+      // Create new user
       const newUser = {
-        id: `${MOCK_USERS.length + 1}`,
+        id: `${users.length + 1}`,
         name,
         email,
         password,
         role: 'user' as UserRole,
-        // Add default values for the required properties
         gender: '',
         age: 0,
         height: 0,
         weight: 0,
-        createdAt: new Date()
+        createdAt: new Date(),
+        subscriptionPlan: 'free' as SubscriptionPlan
       };
       
-      MOCK_USERS.push(newUser);
+      // Update users array and localStorage
+      const updatedUsers = [...users, newUser];
+      setUsers(updatedUsers);
+      localStorage.setItem('fitnessUsers', JSON.stringify(updatedUsers));
       
       // Note: We don't automatically log in the user here
-      // They will be redirected to login page
       
     } catch (error) {
       console.error('Signup failed:', error);
@@ -186,8 +205,51 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(updatedUser);
       localStorage.setItem('fitnessUser', JSON.stringify(updatedUser));
       
+      // Also update in the users array
+      const updatedUsers = users.map(u => 
+        u.id === user.id ? { ...u, ...userData, password: u.password } : u
+      );
+      setUsers(updatedUsers);
+      localStorage.setItem('fitnessUsers', JSON.stringify(updatedUsers));
+      
     } catch (error) {
       console.error('Update failed:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateSubscription = async (plan: SubscriptionPlan): Promise<void> => {
+    if (!user) throw new Error('No user logged in');
+    
+    setIsLoading(true);
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      const subscriptionData = {
+        subscriptionPlan: plan,
+        subscriptionDate: new Date()
+      };
+      
+      // Update the user data
+      const updatedUser = { ...user, ...subscriptionData };
+      
+      // Update in state and localStorage
+      setUser(updatedUser);
+      localStorage.setItem('fitnessUser', JSON.stringify(updatedUser));
+      
+      // Also update in the users array
+      const updatedUsers = users.map(u => 
+        u.id === user.id ? { ...u, ...subscriptionData, password: u.password } : u
+      );
+      setUsers(updatedUsers);
+      localStorage.setItem('fitnessUsers', JSON.stringify(updatedUsers));
+      
+    } catch (error) {
+      console.error('Subscription update failed:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -207,7 +269,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         signup, 
         logout, 
         updateUser,
-        isAdmin 
+        isAdmin,
+        updateSubscription
       }}
     >
       {children}

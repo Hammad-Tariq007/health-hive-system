@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Menu, X, User, Sun, Moon, Shield } from "lucide-react";
+import { Menu, X, User, Sun, Moon, Shield, CreditCard } from "lucide-react";
 import { useIsMobile } from '@/hooks/use-mobile';
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from '@/lib/utils';
@@ -182,6 +183,24 @@ const Header = ({ scrolled = false }: HeaderProps) => {
                   </Link>
                 </NavigationMenuItem>
               )}
+              
+              {/* Subscribe Button - Only visible for regular logged-in users (not admins) */}
+              {user && !isAdmin() && (
+                <NavigationMenuItem>
+                  <Link to="/subscribe">
+                    <NavigationMenuLink className="group inline-flex h-9 w-max items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50 relative">
+                      <CreditCard className="mr-1 h-4 w-4" />
+                      Subscribe
+                      {location.pathname.startsWith('/subscribe') && (
+                        <motion.div
+                          className="absolute -bottom-1 left-0 h-0.5 w-full bg-fitness-primary"
+                          layoutId="navunderline"
+                        />
+                      )}
+                    </NavigationMenuLink>
+                  </Link>
+                </NavigationMenuItem>
+              )}
             </NavigationMenuList>
           </NavigationMenu>
         ) : null}
@@ -329,6 +348,11 @@ const Header = ({ scrolled = false }: HeaderProps) => {
                 {/* Show Admin Panel link only for admin users */}
                 {user && isAdmin() && (
                   <MobileNavLink to="/admin">Admin Panel</MobileNavLink>
+                )}
+                
+                {/* Show Subscribe link only for regular users */}
+                {user && !isAdmin() && (
+                  <MobileNavLink to="/subscribe">Subscribe</MobileNavLink>
                 )}
                 
                 {user ? (

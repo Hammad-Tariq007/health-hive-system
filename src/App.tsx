@@ -25,6 +25,7 @@ import ManageUsers from "./pages/admin/ManageUsers";
 import ManageWorkouts from "./pages/admin/ManageWorkouts";
 import ManageNutrition from "./pages/admin/ManageNutrition";
 import ManageBlog from "./pages/admin/ManageBlog";
+import Subscribe from "./pages/Subscribe";
 
 // Import all the new pages
 import AboutUs from "./pages/AboutUs";
@@ -64,6 +65,7 @@ const App = () => (
               <Route path="/profile" element={<Profile />} />
               <Route path="/edit-profile" element={<EditProfile />} />
               <Route path="/bmi-calculator" element={<BmiCalculator />} />
+              <Route path="/subscribe" element={<Subscribe />} />
               
               {/* Company Pages */}
               <Route path="/about" element={<AboutUs />} />
