@@ -15,11 +15,11 @@ const storage = multer.diskStorage({
     let dest = uploadDir;
     
     // Create subdirectories based on file type
-    if (file.fieldname === 'image') {
+    if (file.fieldname === 'image' || file.mimetype.startsWith('image/')) {
       dest = path.join(uploadDir, 'images');
-    } else if (file.fieldname === 'audio') {
+    } else if (file.fieldname === 'audio' || file.mimetype.startsWith('audio/')) {
       dest = path.join(uploadDir, 'audio');
-    } else if (file.fieldname === 'video') {
+    } else if (file.fieldname === 'video' || file.mimetype.startsWith('video/')) {
       dest = path.join(uploadDir, 'video');
     }
     
@@ -37,19 +37,19 @@ const storage = multer.diskStorage({
 
 // File filter configuration
 const fileFilter = (req, file, cb) => {
-  if (file.fieldname === 'image') {
+  if (file.fieldname === 'image' || file.mimetype.startsWith('image/')) {
     // Accept images only
     if (!file.originalname.match(/\.(jpg|JPG|jpeg|JPEG|png|PNG|gif|GIF|webp)$/)) {
       req.fileValidationError = 'Only image files are allowed!';
       return cb(new Error('Only image files are allowed!'), false);
     }
-  } else if (file.fieldname === 'audio') {
+  } else if (file.fieldname === 'audio' || file.mimetype.startsWith('audio/')) {
     // Accept audio only
     if (!file.originalname.match(/\.(mp3|MP3|wav|WAV|ogg|OGG)$/)) {
       req.fileValidationError = 'Only audio files are allowed!';
       return cb(new Error('Only audio files are allowed!'), false);
     }
-  } else if (file.fieldname === 'video') {
+  } else if (file.fieldname === 'video' || file.mimetype.startsWith('video/')) {
     // Accept video only
     if (!file.originalname.match(/\.(mp4|MP4|webm|WEBM|mkv|MKV)$/)) {
       req.fileValidationError = 'Only video files are allowed!';

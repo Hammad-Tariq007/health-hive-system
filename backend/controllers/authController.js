@@ -44,6 +44,10 @@ exports.register = async (req, res) => {
           name: user.name,
           email: user.email,
           role: user.role,
+          gender: user.gender,
+          age: user.age,
+          height: user.height,
+          weight: user.weight,
           subscriptionPlan: user.subscriptionPlan,
           token: generateToken(user._id)
         }
@@ -80,6 +84,10 @@ exports.login = async (req, res) => {
           id: user._id,
           name: user.name,
           email: user.email,
+          gender: user.gender,
+          age: user.age,
+          height: user.height,
+          weight: user.weight,
           role: user.role,
           subscriptionPlan: user.subscriptionPlan,
           token: generateToken(user._id)
@@ -111,12 +119,14 @@ exports.getMe = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        gender: user.gender,
+        age: user.age,
+        height: user.height,
+        weight: user.weight,
         role: user.role,
         subscriptionPlan: user.subscriptionPlan,
         profileImage: user.profileImage,
         bio: user.bio,
-        height: user.height,
-        weight: user.weight,
         fitnessGoal: user.fitnessGoal,
         createdAt: user.createdAt
       }
@@ -132,7 +142,7 @@ exports.getMe = async (req, res) => {
 // @access  Private
 exports.updateProfile = async (req, res) => {
   try {
-    const { name, bio, height, weight, fitnessGoal } = req.body;
+    const { name, bio, height, weight, fitnessGoal, gender, age } = req.body;
     
     const userFields = {};
     if (name) userFields.name = name;
@@ -140,6 +150,8 @@ exports.updateProfile = async (req, res) => {
     if (height) userFields.height = height;
     if (weight) userFields.weight = weight;
     if (fitnessGoal) userFields.fitnessGoal = fitnessGoal;
+    if (gender) userFields.gender = gender;
+    if (age) userFields.age = age;
     
     // Handle profile image if uploaded
     if (req.file) {
@@ -162,12 +174,14 @@ exports.updateProfile = async (req, res) => {
         id: updatedUser._id,
         name: updatedUser.name,
         email: updatedUser.email,
+        gender: updatedUser.gender,
+        age: updatedUser.age,
+        height: updatedUser.height,
+        weight: updatedUser.weight,
         role: updatedUser.role,
         subscriptionPlan: updatedUser.subscriptionPlan,
         profileImage: updatedUser.profileImage,
         bio: updatedUser.bio,
-        height: updatedUser.height,
-        weight: updatedUser.weight,
         fitnessGoal: updatedUser.fitnessGoal
       }
     });
