@@ -3,13 +3,12 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { FormInput } from "@/components/ui/custom/FormInput";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Facebook } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 
 const Signup = () => {
@@ -61,54 +60,36 @@ const Signup = () => {
     try {
       await signup(name, email, password);
       
-      // Redirect to login page with a state flag to show success message
-      navigate('/login', { state: { fromSignup: true } });
+      toast({
+        title: "Account created",
+        description: "Your account has been successfully created. Welcome to FitnessFreaks!"
+      });
+      
+      navigate('/');
       
     } catch (error: any) {
       // If the error is about email already in use
-      if (error.message && error.message.includes('Email already in use')) {
+      const errorMessage = error.response?.data?.message || "Sign up failed. Please try again.";
+      
+      if (errorMessage.includes('User already exists') || errorMessage.includes('duplicate key')) {
         setErrors({
           ...errors,
           email: "This email is already registered"
         });
-      } else {
-        toast({
-          title: "Sign up failed",
-          description: "There was a problem creating your account.",
-          variant: "destructive"
-        });
       }
+      
+      console.error("Signup error:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoogleSignup = async () => {
-    try {
-      await loginWithGoogle();
-      navigate('/');
-    } catch (error) {
-      console.error("Google signup error:", error);
-      toast({
-        title: "Google signup failed",
-        description: "There was a problem signing up with Google.",
-        variant: "destructive"
-      });
-    }
+  const handleGoogleSignup = () => {
+    loginWithGoogle();
   };
 
-  const handleFacebookSignup = async () => {
-    try {
-      await loginWithFacebook();
-      navigate('/');
-    } catch (error) {
-      console.error("Facebook signup error:", error);
-      toast({
-        title: "Facebook signup failed",
-        description: "There was a problem signing up with Facebook.",
-        variant: "destructive"
-      });
-    }
+  const handleFacebookSignup = () => {
+    loginWithFacebook();
   };
   
   return (
@@ -240,7 +221,9 @@ const Signup = () => {
                 className="w-full"
                 onClick={handleFacebookSignup}
               >
-                <Facebook className="mr-2 h-4 w-4" />
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-facebook mr-2" viewBox="0 0 16 16">
+                  <path d="M16 8.049c0-4.446-3.582-8.05-8-8.05C3.58 0-.002 3.603-.002 8.05c0 4.017 2.926 7.347 6.75 7.951v-5.625h-2.03V8.05H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98h-1.009c-.993 0-1.303.621-1.303 1.258v1.51h2.218l-.354 2.326H9.25V16c3.824-.604 6.75-3.934 6.75-7.951z" />
+                </svg>
                 Facebook
               </Button>
             </div>

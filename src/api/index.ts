@@ -1,4 +1,6 @@
+
 import axios, { AxiosRequestConfig, AxiosError, AxiosResponse } from 'axios';
+import { toast } from '@/hooks/use-toast';
 
 // Get API URL from environment variable, with fallback
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -9,6 +11,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
 
 // Add request interceptor to include JWT token if available
@@ -29,16 +32,49 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
+    console.error('API Error:', error);
+    
     if (error.response?.status === 401) {
       // Unauthorized - token expired or invalid
       localStorage.removeItem('fitnessToken');
-      localStorage.removeItem('fitnessUser');
       
-      // Redirect to login if not already there
-      if (window.location.pathname !== '/login') {
+      // Only redirect to login if not already there and not a social auth callback
+      const currentPath = window.location.pathname;
+      const searchParams = new URLSearchParams(window.location.search);
+      const hasAuthToken = searchParams.has('token');
+      
+      if (currentPath !== '/login' && currentPath !== '/signup' && !hasAuthToken) {
+        toast({
+          title: "Session expired",
+          description: "Please login again to continue.",
+          variant: "destructive",
+        });
+        
         window.location.href = '/login';
       }
+    } else if (error.response?.status === 403) {
+      // Forbidden - not authorized
+      toast({
+        title: "Access denied",
+        description: "You don't have permission to access this resource.",
+        variant: "destructive",
+      });
+    } else if (error.response?.status === 500) {
+      // Server error
+      toast({
+        title: "Server error",
+        description: "Something went wrong on the server. Please try again later.",
+        variant: "destructive",
+      });
+    } else if (!error.response && error.code === 'ERR_NETWORK') {
+      // Network error
+      toast({
+        title: "Network error",
+        description: "Could not connect to the server. Please check your internet connection.",
+        variant: "destructive",
+      });
     }
+    
     return Promise.reject(error);
   }
 );
@@ -219,8 +255,11 @@ export const communityAPI = {
 
 // Newsletter API
 export const newsletterAPI = {
-  subscribe: (email: string) => api.post('/newsletter/subscribe', { email }),
-  unsubscribe: (email: string) => api.post('/newsletter/unsubscribe', { email }),
+  subscribe: (email: string, name?: string) => 
+    api.post('/newsletter/subscribe', { email, name }),
+  
+  unsubscribe: (email: string) => 
+    api.post('/newsletter/unsubscribe', { email }),
 };
 
 // Subscription API
@@ -238,15 +277,6 @@ export const subscriptionAPI = {
   }) => api.post('/subscribe/complete', paymentData),
   
   cancelSubscription: () => api.post('/subscribe/cancel'),
-};
-
-// Chat API
-export const chatAPI = {
-  getMessages: () => api.get('/chat/messages'),
-  
-  sendMessage: (content: string) => api.post('/chat/message', { content }),
-  
-  getChatRooms: () => api.get('/chat/rooms'),
 };
 
 export default api;

@@ -3,14 +3,12 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FormInput } from "@/components/ui/custom/FormInput";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Facebook } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
-import { authAPI } from "@/api";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -20,44 +18,31 @@ const Login = () => {
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   
   const { toast } = useToast();
-  const { login, loginWithGoogle, loginWithFacebook } = useUser();
+  const { login, loginWithGoogle, loginWithFacebook, isAdmin } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Handle social authentication redirect
+  // Handle social authentication redirect and token
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const token = params.get('token');
     const error = params.get('error');
     
     if (token) {
-      const handleSocialLogin = async () => {
-        try {
-          setIsLoading(true);
-          const response = await authAPI.handleSocialAuth(token);
-          
-          toast({
-            title: "Login successful",
-            description: "Welcome back to FitnessFreaks!"
-          });
-          
-          navigate('/');
-        } catch (error) {
-          toast({
-            title: "Login failed",
-            description: "There was a problem with social authentication.",
-            variant: "destructive"
-          });
-        } finally {
-          setIsLoading(false);
-        }
-      };
+      // Store token and redirect
+      localStorage.setItem('fitnessToken', token);
       
-      handleSocialLogin();
+      toast({
+        title: "Login successful",
+        description: "Welcome to FitnessFreaks!"
+      });
+      
+      // Redirect will happen automatically after getting user data in the UserContext
+      window.location.href = '/';
     } else if (error) {
       toast({
         title: "Login failed",
-        description: "There was a problem with social authentication.",
+        description: decodeURIComponent(error),
         variant: "destructive"
       });
     }
@@ -104,54 +89,29 @@ const Login = () => {
       
       toast({
         title: "Login successful",
-        description: "Welcome back to FitnessFreaks!"
+        description: "Welcome to FitnessFreaks!"
       });
       
-      navigate('/');
-    } catch (error: any) {
-      // If error contains details about invalid credentials
-      if (error.response?.data?.message?.includes('Invalid email or password')) {
-        toast({
-          title: "Invalid credentials",
-          description: "The email or password you entered is incorrect.",
-          variant: "destructive"
-        });
+      // Redirect based on user role
+      if (isAdmin()) {
+        navigate('/admin');
       } else {
-        toast({
-          title: "Login failed",
-          description: "There was a problem logging into your account.",
-          variant: "destructive"
-        });
+        navigate('/');
       }
+    } catch (error: any) {
+      // Error is handled in the login function
+      console.error("Login error:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoogleLogin = async () => {
-    try {
-      await loginWithGoogle();
-    } catch (error) {
-      console.error("Google login error:", error);
-      toast({
-        title: "Google login failed",
-        description: "There was a problem logging in with Google.",
-        variant: "destructive"
-      });
-    }
+  const handleGoogleLogin = () => {
+    loginWithGoogle();
   };
 
-  const handleFacebookLogin = async () => {
-    try {
-      await loginWithFacebook();
-    } catch (error) {
-      console.error("Facebook login error:", error);
-      toast({
-        title: "Facebook login failed",
-        description: "There was a problem logging in with Facebook.",
-        variant: "destructive"
-      });
-    }
+  const handleFacebookLogin = () => {
+    loginWithFacebook();
   };
   
   return (
@@ -267,7 +227,9 @@ const Login = () => {
                 className="w-full"
                 onClick={handleFacebookLogin}
               >
-                <Facebook className="mr-2 h-4 w-4" />
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-facebook mr-2" viewBox="0 0 16 16">
+                  <path d="M16 8.049c0-4.446-3.582-8.05-8-8.05C3.58 0-.002 3.603-.002 8.05c0 4.017 2.926 7.347 6.75 7.951v-5.625h-2.03V8.05H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98h-1.009c-.993 0-1.303.621-1.303 1.258v1.51h2.218l-.354 2.326H9.25V16c3.824-.604 6.75-3.934 6.75-7.951z" />
+                </svg>
                 Facebook
               </Button>
             </div>

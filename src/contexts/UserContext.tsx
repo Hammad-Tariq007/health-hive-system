@@ -1,6 +1,7 @@
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import axios from '@/api';
+import { toast } from '@/hooks/use-toast';
 
 export type UserRole = 'user' | 'admin';
 export type SubscriptionPlan = 'free' | 'pro' | 'elite';
@@ -34,8 +35,8 @@ interface UserContextType {
   updateUser: (userData: Partial<User>) => Promise<void>;
   updateSubscription: (plan: SubscriptionPlan) => Promise<void>;
   isAdmin: () => boolean;
-  loginWithGoogle: () => Promise<void>;
-  loginWithFacebook: () => Promise<void>;
+  loginWithGoogle: () => void;
+  loginWithFacebook: () => void;
 }
 
 const UserContext = createContext<UserContextType>({
@@ -49,8 +50,8 @@ const UserContext = createContext<UserContextType>({
   updateUser: async () => {},
   updateSubscription: async () => {},
   isAdmin: () => false,
-  loginWithGoogle: async () => {},
-  loginWithFacebook: async () => {}
+  loginWithGoogle: () => {},
+  loginWithFacebook: () => {}
 });
 
 interface UserProviderProps {
@@ -77,8 +78,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
             id: userData._id || userData.id,
             name: userData.name,
             email: userData.email,
-            role: userData.role,
-            subscriptionPlan: userData.subscriptionPlan,
+            role: userData.role as UserRole,
+            subscriptionPlan: userData.subscriptionPlan as SubscriptionPlan,
             profileImage: userData.profileImage,
             bio: userData.bio,
             gender: userData.gender,
@@ -90,6 +91,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
             subscriptionDate: userData.subscriptionDate ? new Date(userData.subscriptionDate) : undefined
           });
         } catch (error) {
+          console.error("Failed to fetch current user:", error);
           localStorage.removeItem('fitnessToken');
         }
       }
@@ -117,8 +119,15 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         createdAt: new Date(userData.createdAt),
         subscriptionDate: userData.subscriptionDate ? new Date(userData.subscriptionDate) : undefined
       });
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Login failed');
+      return;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Login failed. Please check your credentials.";
+      setError(errorMessage);
+      toast({
+        title: "Login failed",
+        description: errorMessage,
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsLoading(false);
@@ -142,8 +151,15 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         createdAt: new Date(userData.createdAt),
         subscriptionDate: userData.subscriptionDate ? new Date(userData.subscriptionDate) : undefined
       });
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Registration failed');
+      return;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Registration failed. Please try again.";
+      setError(errorMessage);
+      toast({
+        title: "Registration failed",
+        description: errorMessage,
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsLoading(false);
@@ -156,6 +172,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('fitnessToken');
     setUser(null);
+    window.location.href = '/';
   };
 
   const updateUser = async (userData: Partial<User>) => {
@@ -172,7 +189,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         }
       });
       
-      // Add profile image if provided
+      // Add profile image if provided as a File
       if (userData.profileImage && typeof userData.profileImage !== 'string') {
         formData.append('image', userData.profileImage);
       }
@@ -191,8 +208,9 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         id: updatedUserData._id || updatedUserData.id || prev.id,
         createdAt: prev.createdAt
       } : null);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Profile update failed');
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Profile update failed. Please try again.";
+      setError(errorMessage);
       throw error;
     } finally {
       setIsLoading(false);
@@ -224,36 +242,12 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   };
 
   // Social authentication methods
-  const loginWithGoogle = async () => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const response = await axios.get('/auth/google');
-      console.log('Google login attempted - implement OAuth flow');
-      window.location.href = response.data.redirectUrl;
-    } catch (error) {
-      setError('Google login failed');
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
+  const loginWithGoogle = () => {
+    window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/google`;
   };
 
-  const loginWithFacebook = async () => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const response = await axios.get('/auth/facebook');
-      console.log('Facebook login attempted - implement OAuth flow');
-      window.location.href = response.data.redirectUrl;
-    } catch (error) {
-      setError('Facebook login failed');
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
+  const loginWithFacebook = () => {
+    window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/facebook`;
   };
 
   return (

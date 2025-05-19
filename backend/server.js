@@ -5,7 +5,8 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
-const socialAuthController = require('./controllers/socialAuthController');
+const passport = require('passport');
+const session = require('express-session');
 
 // Load environment variables
 dotenv.config();
@@ -15,12 +16,30 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   credentials: true
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(socialAuthController.initialize()); // Initialize passport
+
+// Set up session middleware
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'fitness-freaks-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
+// Initialize passport
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Initialize social auth controllers
+const socialAuthController = require('./controllers/socialAuthController');
+socialAuthController.initializeStrategies();
 
 // Ensure uploads directory exists
 const uploadDir = path.join(__dirname, 'uploads');
@@ -60,8 +79,17 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'Server is healthy!' });
 });
 
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(err.statusCode || 500).json({
+    success: false,
+    error: err.message || 'Server Error'
+  });
+});
+
 // Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect(process.env.MONGO_URI || 'mongodb+srv://fitnessfreaks:fitnessfreaks123@cluster0.pw659.mongodb.net/fitnessfreaks?retryWrites=true&w=majority&appName=Cluster0')
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('Could not connect to MongoDB:', err));
 
