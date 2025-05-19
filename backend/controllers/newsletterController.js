@@ -5,8 +5,8 @@ const nodemailer = require('nodemailer');
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER || 'app@gmail.com', // Replace with actual email in production
-    pass: process.env.EMAIL_PASSWORD || 'app_password', // Replace with actual password in production
+    user: process.env.EMAIL_USER || 'app@gmail.com', 
+    pass: process.env.EMAIL_PASSWORD || 'app_password',
   }
 });
 
@@ -27,8 +27,8 @@ exports.subscribeToNewsletter = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid email format' });
     }
     
-    // In a production environment, you would typically store this email in a database
-    // For now, we'll just send a notification to the admin
+    // In a production environment, you should store this email in a database
+    // For now, just send notification to admin
     
     // Send notification email to admin
     await transporter.sendMail({
@@ -72,6 +72,42 @@ exports.subscribeToNewsletter = async (req, res) => {
     });
   } catch (error) {
     console.error('Newsletter subscription error:', error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Unsubscribe from newsletter
+// @route   POST /api/newsletter/unsubscribe
+// @access  Public
+exports.unsubscribeFromNewsletter = async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+    
+    // In a production environment, you would remove this email from the newsletter database
+    // For now, we'll just send a notification
+    
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER || 'app@gmail.com',
+      to: 'hammadtariq0118@gmail.com',
+      subject: 'Newsletter Unsubscription',
+      html: `
+        <h1>Newsletter Unsubscription</h1>
+        <p>A user has unsubscribed from your newsletter</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
+      `
+    });
+    
+    res.status(200).json({
+      success: true,
+      message: 'Successfully unsubscribed from newsletter'
+    });
+  } catch (error) {
+    console.error('Newsletter unsubscription error:', error);
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 };

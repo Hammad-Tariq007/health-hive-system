@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import api from '@/api';
+import axios from '@/api';
 
 export type UserRole = 'user' | 'admin';
 export type SubscriptionPlan = 'free' | 'pro' | 'elite';
@@ -68,7 +68,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       
       if (token) {
         try {
-          const response = await api.get('/auth/me');
+          const response = await axios.get('/auth/me');
           
           // Transform the response data to match our User interface
           const userData = response.data.user;
@@ -105,7 +105,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     setError(null);
     
     try {
-      const response = await api.post('/auth/login', { email, password });
+      const response = await axios.post('/auth/login', { email, password });
       
       const { token, ...userData } = response.data.user;
       
@@ -117,8 +117,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         createdAt: new Date(userData.createdAt),
         subscriptionDate: userData.subscriptionDate ? new Date(userData.subscriptionDate) : undefined
       });
-    } catch (error: any) {
-      setError(error.response?.data?.message || 'Login failed');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Login failed');
       throw error;
     } finally {
       setIsLoading(false);
@@ -130,7 +130,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     setError(null);
     
     try {
-      const response = await api.post('/auth/register', { name, email, password });
+      const response = await axios.post('/auth/register', { name, email, password });
       
       const { token, ...userData } = response.data.user;
       
@@ -142,8 +142,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         createdAt: new Date(userData.createdAt),
         subscriptionDate: userData.subscriptionDate ? new Date(userData.subscriptionDate) : undefined
       });
-    } catch (error: any) {
-      setError(error.response?.data?.message || 'Registration failed');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Registration failed');
       throw error;
     } finally {
       setIsLoading(false);
@@ -177,7 +177,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         formData.append('image', userData.profileImage);
       }
       
-      const response = await api.put('/auth/profile', formData, {
+      const response = await axios.put('/auth/profile', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -191,8 +191,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         id: updatedUserData._id || updatedUserData.id || prev.id,
         createdAt: prev.createdAt
       } : null);
-    } catch (error: any) {
-      setError(error.response?.data?.message || 'Profile update failed');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Profile update failed');
       throw error;
     } finally {
       setIsLoading(false);
@@ -204,17 +204,14 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     setError(null);
     
     try {
-      // In a real implementation, this would call a backend API
-      // to update the user's subscription plan
       if (user) {
-        // For now, we'll just update the user state locally
         setUser({ 
           ...user, 
           subscriptionPlan: plan,
           subscriptionDate: new Date()
         });
       }
-    } catch (error: any) {
+    } catch (error) {
       setError('Subscription update failed');
       throw error;
     } finally {
@@ -232,15 +229,10 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     setError(null);
     
     try {
-      const response = await api.get('/auth/google');
-      // This would typically redirect to Google OAuth
-      
-      // For now, we'll mock the response
+      const response = await axios.get('/auth/google');
       console.log('Google login attempted - implement OAuth flow');
-      
-      // In actual implementation, this would handle the OAuth redirect
       window.location.href = response.data.redirectUrl;
-    } catch (error: any) {
+    } catch (error) {
       setError('Google login failed');
       throw error;
     } finally {
@@ -253,15 +245,10 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     setError(null);
     
     try {
-      const response = await api.get('/auth/facebook');
-      // This would typically redirect to Facebook OAuth
-      
-      // For now, we'll mock the response
+      const response = await axios.get('/auth/facebook');
       console.log('Facebook login attempted - implement OAuth flow');
-      
-      // In actual implementation, this would handle the OAuth redirect
       window.location.href = response.data.redirectUrl;
-    } catch (error: any) {
+    } catch (error) {
       setError('Facebook login failed');
       throw error;
     } finally {

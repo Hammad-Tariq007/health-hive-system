@@ -1,23 +1,26 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
-import { useUser, UserRole } from "@/contexts/UserContext";
 import AdminLayout from "./AdminLayout";
 import { motion } from "framer-motion";
-import { ArrowUpDown, Search, Trash2, Shield, User as UserIcon, MoreHorizontal } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { userAPI } from "@/api";
+import { useUser, UserRole } from "@/contexts/UserContext";
+import { Search, UserCog, Trash2, CheckCircle, XCircle, MoreHorizontal, Shield, User } from "lucide-react";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,87 +30,64 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
-import { userAPI } from "@/api"; // Import the API
-
-type UserStatus = 'active' | 'inactive';
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface UserData {
   id: string;
   name: string;
   email: string;
   role: UserRole;
-  subscriptionPlan: string;
+  profileImage?: string;
   createdAt: Date;
-  status: UserStatus;
 }
 
 const ManageUsers = () => {
-  const { user: currentUser, isAdmin } = useUser();
-  const navigate = useNavigate();
-  const { toast } = useToast();
   const [users, setUsers] = useState<UserData[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
+  const [filteredUsers, setFilteredUsers] = useState<UserData[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
+  const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
   
-  // Load users from API
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const { user, isAdmin } = useUser();
+  
+  // If not admin, redirect to homepage
   useEffect(() => {
-    // Check if user is admin, if not redirect
-    if (!currentUser) {
-      toast({
-        title: "Access Denied",
-        description: "Please log in to access this page",
-        variant: "destructive"
-      });
-      navigate('/login');
-      return;
-    }
-    
-    if (!isAdmin()) {
-      toast({
-        title: "Access Denied",
-        description: "You don't have permission to access this page",
-        variant: "destructive"
-      });
+    if (!isLoading && !isAdmin()) {
       navigate('/');
-      return;
     }
+  }, [isLoading, isAdmin, navigate]);
 
-    // Fetch users from API
+  // Get all users when component mounts
+  useEffect(() => {
     const fetchUsers = async () => {
       try {
         setIsLoading(true);
         const response = await userAPI.getAllUsers();
         
-        // Transform API response to match component's expected format
-        const formattedUsers: UserData[] = response.data.users.map((u: any) => ({
-          id: u._id,
-          name: u.name,
-          email: u.email,
-          role: u.role as UserRole,
-          subscriptionPlan: u.subscriptionPlan,
-          createdAt: new Date(u.createdAt),
-          status: 'active' as UserStatus
-        }));
-        
-        setUsers(formattedUsers);
+        if (response.data && response.data.users) {
+          const formattedUsers: UserData[] = response.data.users.map((user: any) => ({
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            profileImage: user.profileImage,
+            createdAt: new Date(user.createdAt)
+          }));
+          
+          setUsers(formattedUsers);
+          setFilteredUsers(formattedUsers);
+        }
       } catch (error) {
-        console.error('Error fetching users:', error);
+        console.error("Failed to fetch users:", error);
         toast({
           title: "Error",
-          description: "Failed to load users data",
-          variant: "destructive"
+          description: "Failed to load users. Please try again later.",
+          variant: "destructive",
         });
       } finally {
         setIsLoading(false);
@@ -115,201 +95,168 @@ const ManageUsers = () => {
     };
 
     fetchUsers();
-  }, [currentUser, isAdmin, navigate, toast]);
+  }, [toast]);
 
-  // Filter users based on search term
-  const filteredUsers = users.filter(user => 
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const handleDeleteUser = async (id: string) => {
-    // Don't allow deletion of the current user
-    if (currentUser?.id === id) {
-      toast({
-        title: "Cannot Delete",
-        description: "You cannot delete your own account while logged in.",
-        variant: "destructive"
-      });
-      return;
+  // Filter users based on search query and active tab
+  useEffect(() => {
+    let results = users;
+    
+    // Filter by search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      results = results.filter(
+        (user) =>
+          user.name.toLowerCase().includes(query) ||
+          user.email.toLowerCase().includes(query)
+      );
     }
     
-    try {
-      // Delete user through API
-      await userAPI.deleteUser(id);
-      
-      // Update the local state after successful deletion
-      setUsers(users.filter(user => user.id !== id));
-      
-      toast({
-        title: "User Deleted",
-        description: "The user has been successfully removed.",
-        variant: "default"
-      });
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete user. Please try again.",
-        variant: "destructive"
-      });
+    // Filter by role
+    if (activeTab !== "all") {
+      results = results.filter((user) => user.role === activeTab);
     }
-  };
+    
+    setFilteredUsers(results);
+  }, [users, searchQuery, activeTab]);
 
-  const handleToggleRole = async (id: string) => {
+  const handleRoleChange = async (userId: string, newRole: UserRole) => {
     try {
-      const user = users.find(u => u.id === id);
-      if (!user) return;
+      await userAPI.updateUserRole(userId, newRole);
       
-      const newRole = user.role === 'admin' ? 'user' : 'admin';
-      
-      // Update role through API
-      await userAPI.updateUserRole(id, newRole as UserRole);
-      
-      // Update local state after successful update
-      const updatedUsers = users.map(user => {
-        if (user.id === id) {
-          return {
-            ...user,
-            role: newRole as UserRole
-          };
-        }
-        return user;
-      });
-      
-      setUsers(updatedUsers);
+      // Update local state
+      setUsers(prevUsers =>
+        prevUsers.map(user =>
+          user.id === userId ? { ...user, role: newRole } : user
+        )
+      );
       
       toast({
-        title: "Role Updated",
-        description: `User is now a ${newRole}.`,
-        variant: "default"
+        title: "Role updated",
+        description: "User role has been successfully updated",
       });
     } catch (error) {
-      console.error('Error updating user role:', error);
+      console.error("Failed to update user role:", error);
       toast({
         title: "Error",
         description: "Failed to update user role. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
 
-  const handleToggleStatus = (id: string) => {
-    const updatedUsers = users.map(user => {
-      if (user.id === id) {
-        const newStatus = user.status === 'active' ? 'inactive' : 'active';
-        return {
-          ...user,
-          status: newStatus as UserStatus
-        };
-      }
-      return user;
-    });
-    
-    setUsers(updatedUsers);
-    
-    const user = users.find(u => u.id === id);
-    const newStatus = user?.status === 'active' ? 'inactive' : 'active';
-    
-    toast({
-      title: "Status Updated",
-      description: `User is now ${newStatus}.`,
-      variant: "default"
-    });
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      await userAPI.deleteUser(userId);
+      
+      // Update local state
+      setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
+      
+      toast({
+        title: "User deleted",
+        description: "User has been successfully deleted",
+      });
+    } catch (error) {
+      console.error("Failed to delete user:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete user. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteUserId(null);
+    }
   };
 
-  if (isLoading) {
-    return (
-      <AdminLayout>
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-        </div>
-      </AdminLayout>
-    );
-  }
+  const confirmDelete = (userId: string) => {
+    setDeleteUserId(userId);
+  };
 
   return (
     <AdminLayout>
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+        >
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Manage Users</h1>
             <p className="text-muted-foreground">
-              View, edit, and manage all users on the platform.
+              Review and manage user accounts and permissions
             </p>
           </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-            <div className="w-full relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search users..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 w-full"
+          {/* Search Box */}
+          <div className="w-full md:w-auto">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search" 
+                placeholder="Search users..."
+                className="pl-8 w-full md:w-[250px]"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            
-            <Button className="bg-fitness-primary hover:bg-fitness-secondary sm:w-auto w-full">
-              <UserIcon className="mr-2 h-4 w-4" />
-              Add New User
-            </Button>
           </div>
+        </motion.div>
+
+        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-4">
+            <TabsTrigger value="all">All Users</TabsTrigger>
+            <TabsTrigger value="admin">Admins</TabsTrigger>
+            <TabsTrigger value="user">Standard Users</TabsTrigger>
+          </TabsList>
           
           <Card>
-            <CardHeader className="p-4">
-              <CardTitle>All Users</CardTitle>
+            <CardHeader>
+              <CardTitle>User Management</CardTitle>
               <CardDescription>
-                Showing {filteredUsers.length} out of {users.length} users
+                {filteredUsers.length} users found
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[250px]">Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Subscription</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUsers.map((userData) => (
-                    <TableRow key={userData.id}>
-                      <TableCell className="font-medium">{userData.name}</TableCell>
-                      <TableCell>{userData.email}</TableCell>
-                      <TableCell>
-                        <Badge variant={userData.role === 'admin' ? "default" : "outline"}>
-                          {userData.role === 'admin' ? 'Admin' : 'User'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={userData.status === 'active' ? "default" : "outline"}
-                          className={userData.status === 'active' ? 'bg-green-500 hover:bg-green-600' : ''}
+            <CardContent>
+              <div className="divide-y">
+                {isLoading ? (
+                  // Skeleton loaders when loading
+                  Array(5).fill(null).map((_, i) => (
+                    <div key={i} className="flex items-center py-4 gap-4">
+                      <Skeleton className="h-12 w-12 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-1/3" />
+                        <Skeleton className="h-4 w-1/2" />
+                      </div>
+                      <Skeleton className="h-8 w-24" />
+                    </div>
+                  ))
+                ) : filteredUsers.length > 0 ? (
+                  filteredUsers.map((user) => (
+                    <div key={user.id} className="flex flex-col sm:flex-row sm:items-center py-4 gap-4">
+                      <Avatar className="h-12 w-12">
+                        {user.profileImage ? (
+                          <AvatarImage src={user.profileImage} />
+                        ) : (
+                          <AvatarFallback>
+                            {user.name.substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="font-medium">{user.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {user.email}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Joined {new Date(user.createdAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={user.role === "admin" ? "destructive" : "outline"}
+                          className="capitalize"
                         >
-                          {userData.status === 'active' ? 'Active' : 'Inactive'}
+                          {user.role}
                         </Badge>
-                      </TableCell>
-                      <TableCell>{userData.createdAt.toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={
-                          userData.subscriptionPlan === 'pro' ? 'bg-blue-500 text-white hover:bg-blue-600' :
-                          userData.subscriptionPlan === 'elite' ? 'bg-purple-500 text-white hover:bg-purple-600' : ''
-                        }>
-                          {userData.subscriptionPlan ? 
-                            userData.subscriptionPlan.charAt(0).toUpperCase() + userData.subscriptionPlan.slice(1) : 
-                            'Free'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
+                        
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon">
@@ -319,63 +266,67 @@ const ManageUsers = () => {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleToggleRole(userData.id)}>
-                              <Shield className="mr-2 h-4 w-4" />
-                              {userData.role === 'admin' ? 'Demote to User' : 'Promote to Admin'}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleToggleStatus(userData.id)}>
-                              <UserIcon className="mr-2 h-4 w-4" />
-                              {userData.status === 'active' ? 'Deactivate' : 'Activate'}
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
+                            {user.role === "user" ? (
+                              <DropdownMenuItem
+                                onClick={() => handleRoleChange(user.id, "admin")}
+                                className="cursor-pointer"
+                              >
+                                <Shield className="mr-2 h-4 w-4" />
+                                Make Admin
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem
+                                onClick={() => handleRoleChange(user.id, "user")}
+                                className="cursor-pointer"
+                              >
+                                <User className="mr-2 h-4 w-4" />
+                                Remove Admin
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => setSelectedUser(userData)}
-                              disabled={currentUser?.email === userData.email} // Prevent deleting the current user
+                              onClick={() => confirmDelete(user.id)}
+                              className="text-destructive focus:text-destructive cursor-pointer"
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
                               Delete User
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  
-                  {filteredUsers.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={7} className="h-24 text-center">
-                        No users found.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12">
+                    <UserCog className="h-12 w-12 mx-auto text-muted-foreground" />
+                    <h3 className="mt-2 text-lg font-medium">No users found</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Try adjusting your search or filters
+                    </p>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
-        </div>
-      </motion.div>
-      
-      <AlertDialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
+        </Tabs>
+      </div>
+
+      {/* Delete User Confirmation Dialog */}
+      <AlertDialog open={!!deleteUserId} onOpenChange={() => setDeleteUserId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the user "{selectedUser?.name}" and remove all of their data from the system.
+              This will permanently delete the user account and all associated data.
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
-                if (selectedUser) {
-                  handleDeleteUser(selectedUser.id);
-                  setSelectedUser(null);
-                }
-              }}
+              onClick={() => deleteUserId && handleDeleteUser(deleteUserId)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete User
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

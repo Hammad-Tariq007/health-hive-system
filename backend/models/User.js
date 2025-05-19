@@ -27,73 +27,74 @@ const UserSchema = new mongoose.Schema({
     enum: ['user', 'admin'],
     default: 'user'
   },
-  subscriptionPlan: {
-    type: String,
-    enum: ['free', 'pro', 'elite'],
-    default: 'free'
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  profileImage: {
-    type: String,
-    default: 'default-avatar.png'
-  },
-  bio: {
-    type: String,
-    default: ''
-  },
   gender: {
     type: String,
     enum: ['male', 'female', 'other', ''],
     default: ''
   },
   age: {
-    type: Number
+    type: Number,
+    default: null
   },
   height: {
-    type: Number
+    type: Number,
+    default: null
   },
   weight: {
-    type: Number
+    type: Number,
+    default: null
+  },
+  profileImage: {
+    type: String,
+    default: null
+  },
+  bio: {
+    type: String,
+    default: ''
   },
   fitnessGoal: {
     type: String,
-    enum: ['weight-loss', 'muscle-gain', 'maintenance', 'general-fitness', 'other'],
-    default: 'general-fitness'
+    default: ''
   },
-  stripeCustomerId: {
-    type: String
+  subscriptionPlan: {
+    type: String,
+    enum: ['free', 'pro', 'elite'],
+    default: 'free'
   },
   subscriptionDate: {
-    type: Date
-  },
-  googleId: {
-    type: String
-  },
-  facebookId: {
-    type: String
+    type: Date,
+    default: null
   },
   resetPasswordToken: String,
   resetPasswordExpire: Date,
-  emailConfirmed: {
-    type: Boolean,
-    default: false
+  googleId: {
+    type: String,
+    default: null
   },
-  lastLogin: {
-    type: Date
+  facebookId: {
+    type: String,
+    default: null
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
 });
 
 // Encrypt password using bcrypt
 UserSchema.pre('save', async function(next) {
+  // Only hash the password if it's been modified (or is new)
   if (!this.isModified('password')) {
-    next();
+    return next();
   }
   
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
 // Match user entered password to hashed password in database

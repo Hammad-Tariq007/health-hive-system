@@ -1,4 +1,3 @@
-
 import axios, { AxiosRequestConfig, AxiosError, AxiosResponse } from 'axios';
 
 // Get API URL from environment variable, with fallback
@@ -66,6 +65,12 @@ export const authAPI = {
   googleAuth: () => api.get('/auth/google'),
   
   facebookAuth: () => api.get('/auth/facebook'),
+
+  // Handler for social auth callback
+  handleSocialAuth: (token: string) => {
+    localStorage.setItem('fitnessToken', token);
+    return api.get('/auth/me');
+  }
 };
 
 // User Management API (Admin)
@@ -215,6 +220,7 @@ export const communityAPI = {
 // Newsletter API
 export const newsletterAPI = {
   subscribe: (email: string) => api.post('/newsletter/subscribe', { email }),
+  unsubscribe: (email: string) => api.post('/newsletter/unsubscribe', { email }),
 };
 
 // Subscription API

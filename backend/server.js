@@ -5,6 +5,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
+const socialAuthController = require('./controllers/socialAuthController');
 
 // Load environment variables
 dotenv.config();
@@ -19,6 +20,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(socialAuthController.initialize()); // Initialize passport
 
 // Ensure uploads directory exists
 const uploadDir = path.join(__dirname, 'uploads');
@@ -51,7 +53,7 @@ app.use('/api/progress', progressRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/subscribe', subscriptionRoutes);
 app.use('/api/newsletter', newsletterRoutes);
-app.use('/api/auth', socialAuthRoutes); // Add social auth routes
+app.use('/api/auth', socialAuthRoutes); // Social auth routes
 
 // Health check endpoint
 app.get('/health', (req, res) => {
