@@ -91,26 +91,26 @@ exports.createCheckoutSession = async (req, res) => {
         url: session.url,
       });
     } 
-    else if (['jazzcash', 'easypaisa'].includes(paymentMethod)) {
-      // For jazzcash/easypaisa, we would typically create a pending payment record
-      // and then return a URL or instructions for the mobile payment
-      
-      // This is a placeholder implementation - you would integrate with these services
+    else if (['jazzcash', 'easypaisa', 'paypal'].includes(paymentMethod)) {
+      // For mobile payments and PayPal
       const payment = await Payment.create({
         user: req.user.id,
         amount,
-        currency: 'pkr', // Pakistani Rupee
+        currency: paymentMethod === 'paypal' ? 'usd' : 'pkr',
         paymentMethod,
         subscriptionPlan: plan,
         status: 'pending',
       });
       
+      // Return payment instructions or redirect URL
       return res.json({
         success: true,
         paymentId: payment._id,
-        // This would typically be a redirect URL to the payment gateway
         message: `Please complete your payment using ${paymentMethod}`,
-        instructions: `Send PKR ${amount * 0.0037} to account: 03XX-XXXXXXX` // Example conversion rate
+        // Generate mock payment instructions for testing purposes
+        instructions: paymentMethod === 'paypal' 
+          ? 'You will be redirected to PayPal to complete payment.' 
+          : `Send ${amount * (paymentMethod === 'paypal' ? 1 : 0.0037)} ${paymentMethod === 'paypal' ? 'USD' : 'PKR'} to account: 03XX-XXXXXXX`
       });
     } 
     else {

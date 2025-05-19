@@ -3,64 +3,49 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Ensure uploads directory exists
+// Ensure upload directory exists
 const uploadDir = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Storage configuration
+// Configure storage
 const storage = multer.diskStorage({
-  destination: function(req, file, cb) {
-    let dest = uploadDir;
-    
-    // Create subdirectories based on file type
-    if (file.fieldname === 'image' || file.mimetype.startsWith('image/')) {
-      dest = path.join(uploadDir, 'images');
-    } else if (file.fieldname === 'audio' || file.mimetype.startsWith('audio/')) {
-      dest = path.join(uploadDir, 'audio');
-    } else if (file.fieldname === 'video' || file.mimetype.startsWith('video/')) {
-      dest = path.join(uploadDir, 'video');
-    }
-    
-    // Ensure the destination directory exists
-    if (!fs.existsSync(dest)) {
-      fs.mkdirSync(dest, { recursive: true });
-    }
-    
-    cb(null, dest);
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
   },
-  filename: function(req, file, cb) {
-    cb(null, `${Date.now()}-${file.originalname.replace(/\s+/g, '-')}`);
+  filename: function (req, file, cb) {
+    // Create unique filenames using timestamp and original file extension
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
   }
 });
 
-// File filter configuration
+// File filter to check file types
 const fileFilter = (req, file, cb) => {
-  if (file.fieldname === 'image' || file.mimetype.startsWith('image/')) {
-    // Accept images only
-    if (!file.originalname.match(/\.(jpg|JPG|jpeg|JPEG|png|PNG|gif|GIF|webp)$/)) {
-      req.fileValidationError = 'Only image files are allowed!';
-      return cb(new Error('Only image files are allowed!'), false);
-    }
-  } else if (file.fieldname === 'audio' || file.mimetype.startsWith('audio/')) {
-    // Accept audio only
-    if (!file.originalname.match(/\.(mp3|MP3|wav|WAV|ogg|OGG)$/)) {
-      req.fileValidationError = 'Only audio files are allowed!';
-      return cb(new Error('Only audio files are allowed!'), false);
-    }
-  } else if (file.fieldname === 'video' || file.mimetype.startsWith('video/')) {
-    // Accept video only
-    if (!file.originalname.match(/\.(mp4|MP4|webm|WEBM|mkv|MKV)$/)) {
-      req.fileValidationError = 'Only video files are allowed!';
-      return cb(new Error('Only video files are allowed!'), false);
-    }
+  // Define allowed file types
+  const fileTypes = /jpeg|jpg|png|gif|mp3|mp4|wav|webm|avi|mov/;
+  // Check extension
+  const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
+  // Check mime type
+  const mimetype = fileTypes.test(file.mimetype);
+
+  if (mimetype && extname) {
+    return cb(null, true);
+  } else {
+    cb(new Error('Invalid file type. Only image, audio, and video files are allowed.'));
   }
-  cb(null, true);
 };
 
-exports.upload = multer({ 
-  storage: storage, 
+// Set upload limits - 10MB for uploads
+const limits = {
+  fileSize: 10 * 1024 * 1024 // 10MB
+};
+
+// Export multer instance
+exports.upload = multer({
+  storage: storage,
   fileFilter: fileFilter,
-  limits: { fileSize: 50 * 1024 * 1024 } // 50MB file size limit
+  limits: limits
 });

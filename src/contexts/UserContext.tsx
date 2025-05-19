@@ -34,6 +34,8 @@ interface UserContextType {
   updateUser: (userData: Partial<User>) => Promise<void>;
   updateSubscription: (plan: SubscriptionPlan) => Promise<void>;
   isAdmin: () => boolean;
+  loginWithGoogle: () => Promise<void>;
+  loginWithFacebook: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType>({
@@ -46,7 +48,9 @@ const UserContext = createContext<UserContextType>({
   logout: () => {},
   updateUser: async () => {},
   updateSubscription: async () => {},
-  isAdmin: () => false
+  isAdmin: () => false,
+  loginWithGoogle: async () => {},
+  loginWithFacebook: async () => {}
 });
 
 interface UserProviderProps {
@@ -222,6 +226,49 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     return user?.role === 'admin';
   };
 
+  // Social authentication methods
+  const loginWithGoogle = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await api.get('/auth/google');
+      // This would typically redirect to Google OAuth
+      
+      // For now, we'll mock the response
+      console.log('Google login attempted - implement OAuth flow');
+      
+      // In actual implementation, this would handle the OAuth redirect
+      window.location.href = response.data.redirectUrl;
+    } catch (error: any) {
+      setError('Google login failed');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loginWithFacebook = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await api.get('/auth/facebook');
+      // This would typically redirect to Facebook OAuth
+      
+      // For now, we'll mock the response
+      console.log('Facebook login attempted - implement OAuth flow');
+      
+      // In actual implementation, this would handle the OAuth redirect
+      window.location.href = response.data.redirectUrl;
+    } catch (error: any) {
+      setError('Facebook login failed');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <UserContext.Provider
       value={{
@@ -234,7 +281,9 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         logout,
         updateUser,
         updateSubscription,
-        isAdmin
+        isAdmin,
+        loginWithGoogle,
+        loginWithFacebook
       }}
     >
       {children}

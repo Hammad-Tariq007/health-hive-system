@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useUser } from "@/contexts/UserContext";
+import { useUser, UserRole } from "@/contexts/UserContext";
 import AdminLayout from "./AdminLayout";
 import { motion } from "framer-motion";
 import { ArrowUpDown, Search, Trash2, Shield, User as UserIcon, MoreHorizontal } from "lucide-react";
@@ -38,13 +38,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-// Import User type and other types from contexts/UserContext.tsx
-import { User as UserType, UserRole } from "@/contexts/UserContext";
 import { userAPI } from "@/api"; // Import the API
 
 type UserStatus = 'active' | 'inactive';
 
-interface UserData extends Omit<UserType, 'createdAt'> {
+interface UserData {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  subscriptionPlan: string;
   createdAt: Date;
   status: UserStatus;
 }
@@ -58,7 +61,7 @@ const ManageUsers = () => {
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Load real users from API
+  // Load users from API
   useEffect(() => {
     // Check if user is admin, if not redirect
     if (!currentUser) {

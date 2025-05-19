@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { LogIn, User, Eye, EyeOff } from "lucide-react";
+import { LogIn, User, Eye, EyeOff, Facebook, Mail } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 import { useToast } from "@/hooks/use-toast";
@@ -28,7 +28,7 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { login, user } = useUser();
+  const { login, user, loginWithGoogle, loginWithFacebook } = useUser();
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -88,6 +88,24 @@ const Login = () => {
       setLoginError("Invalid email or password. Please try again.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      await loginWithGoogle();
+    } catch (error) {
+      console.error("Google login error:", error);
+      setLoginError("Google login failed. Please try again.");
+    }
+  };
+
+  const handleFacebookLogin = async () => {
+    try {
+      await loginWithFacebook();
+    } catch (error) {
+      console.error("Facebook login error:", error);
+      setLoginError("Facebook login failed. Please try again.");
     }
   };
 
@@ -187,6 +205,36 @@ const Login = () => {
                 >
                   {isLoading ? "Signing in..." : "Sign In"}
                 </Button>
+
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t"></div>
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <Button 
+                    variant="outline" 
+                    type="button" 
+                    onClick={handleGoogleLogin}
+                    className="w-full"
+                  >
+                    <Mail className="mr-2 h-4 w-4" />
+                    Google
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    type="button"
+                    onClick={handleFacebookLogin} 
+                    className="w-full"
+                  >
+                    <Facebook className="mr-2 h-4 w-4" />
+                    Facebook
+                  </Button>
+                </div>
                 
                 <div className="text-sm text-center mt-4 text-muted-foreground">
                   <p>

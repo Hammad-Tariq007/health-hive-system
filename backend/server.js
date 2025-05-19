@@ -38,6 +38,8 @@ const blogRoutes = require('./routes/blogRoutes');
 const progressRoutes = require('./routes/progressRoutes');
 const communityRoutes = require('./routes/communityRoutes');
 const subscriptionRoutes = require('./routes/subscriptionRoutes');
+const newsletterRoutes = require('./routes/newsletterRoutes');
+const socialAuthRoutes = require('./routes/socialAuthRoutes');
 
 // Use routes
 app.use('/api/auth', authRoutes);
@@ -48,6 +50,8 @@ app.use('/api/blogs', blogRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/subscribe', subscriptionRoutes);
+app.use('/api/newsletter', newsletterRoutes);
+app.use('/api/auth', socialAuthRoutes); // Add social auth routes
 
 // Health check endpoint
 app.get('/health', (req, res) => {

@@ -62,6 +62,10 @@ export const authAPI = {
     }),
   
   deleteAccount: () => api.delete('/auth/delete'),
+  
+  googleAuth: () => api.get('/auth/google'),
+  
+  facebookAuth: () => api.get('/auth/facebook'),
 };
 
 // User Management API (Admin)
@@ -208,6 +212,11 @@ export const communityAPI = {
   deletePost: (id: string) => api.delete(`/community/${id}`),
 };
 
+// Newsletter API
+export const newsletterAPI = {
+  subscribe: (email: string) => api.post('/newsletter/subscribe', { email }),
+};
+
 // Subscription API
 export const subscriptionAPI = {
   createCheckoutSession: (checkoutData: { 
@@ -223,6 +232,15 @@ export const subscriptionAPI = {
   }) => api.post('/subscribe/complete', paymentData),
   
   cancelSubscription: () => api.post('/subscribe/cancel'),
+};
+
+// Chat API
+export const chatAPI = {
+  getMessages: () => api.get('/chat/messages'),
+  
+  sendMessage: (content: string) => api.post('/chat/message', { content }),
+  
+  getChatRooms: () => api.get('/chat/rooms'),
 };
 
 export default api;

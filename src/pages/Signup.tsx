@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { FormInput } from "@/components/ui/custom/FormInput";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Facebook } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 
 const Signup = () => {
@@ -21,7 +21,7 @@ const Signup = () => {
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   
   const { toast } = useToast();
-  const { signup } = useUser();
+  const { signup, loginWithGoogle, loginWithFacebook } = useUser();
   const navigate = useNavigate();
   
   const validateForm = () => {
@@ -36,9 +36,9 @@ const Signup = () => {
       newErrors.email = "Please enter a valid email address";
     }
     
-    const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,}$/;
-    if (!passwordRegex.test(password)) {
-      newErrors.password = "Password must be at least 8 characters with a number and special character";
+    // Make password validation less strict for better user experience
+    if (password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
     }
     
     if (!acceptedTerms) {
@@ -64,9 +64,9 @@ const Signup = () => {
       // Redirect to login page with a state flag to show success message
       navigate('/login', { state: { fromSignup: true } });
       
-    } catch (error) {
+    } catch (error: any) {
       // If the error is about email already in use
-      if ((error as Error).message.includes('Email already in use')) {
+      if (error.message && error.message.includes('Email already in use')) {
         setErrors({
           ...errors,
           email: "This email is already registered"
@@ -80,6 +80,34 @@ const Signup = () => {
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignup = async () => {
+    try {
+      await loginWithGoogle();
+      navigate('/');
+    } catch (error) {
+      console.error("Google signup error:", error);
+      toast({
+        title: "Google signup failed",
+        description: "There was a problem signing up with Google.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleFacebookSignup = async () => {
+    try {
+      await loginWithFacebook();
+      navigate('/');
+    } catch (error) {
+      console.error("Facebook signup error:", error);
+      toast({
+        title: "Facebook signup failed",
+        description: "There was a problem signing up with Facebook.",
+        variant: "destructive"
+      });
     }
   };
   
@@ -141,7 +169,7 @@ const Signup = () => {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 error={errors.password}
-                description="Password must be at least 8 characters long and include a number and a special character."
+                description="Password must be at least 6 characters."
                 required
               />
               
@@ -197,16 +225,22 @@ const Signup = () => {
             </div>
             
             <div className="grid grid-cols-2 gap-4">
-              <Button variant="outline" className="w-full">
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={handleGoogleSignup}
+              >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-google mr-2" viewBox="0 0 16 16">
                   <path d="M15.545 6.558a9.42 9.42 0 0 1 .139 1.626c0 2.434-.87 4.492-2.384 5.885h.002C11.978 15.292 10.158 16 8 16A8 8 0 1 1 8 0a7.689 7.689 0 0 1 5.352 2.082l-2.284 2.284A4.347 4.347 0 0 0 8 3.166c-2.087 0-3.86 1.408-4.492 3.304a4.792 4.792 0 0 0 0 3.063h.003c.635 1.893 2.405 3.301 4.492 3.301 1.078 0 2.004-.276 2.722-.764h-.003a3.702 3.702 0 0 0 1.599-2.431H8v-3.08h7.545z" />
                 </svg>
                 Google
               </Button>
-              <Button variant="outline" className="w-full">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-facebook mr-2" viewBox="0 0 16 16">
-                  <path d="M16 8.049c0-4.446-3.582-8.05-8-8.05C3.58 0-.002 3.603-.002 8.05c0 4.017 2.926 7.347 6.75 7.951v-5.625h-2.03V8.05H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98h-1.009c-.993 0-1.303.621-1.303 1.258v1.51h2.218l-.354 2.326H9.25V16c3.824-.604 6.75-3.934 6.75-7.951z" />
-                </svg>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={handleFacebookSignup}
+              >
+                <Facebook className="mr-2 h-4 w-4" />
                 Facebook
               </Button>
             </div>

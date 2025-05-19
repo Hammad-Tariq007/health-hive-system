@@ -65,6 +65,24 @@ const UserSchema = new mongoose.Schema({
   },
   stripeCustomerId: {
     type: String
+  },
+  subscriptionDate: {
+    type: Date
+  },
+  googleId: {
+    type: String
+  },
+  facebookId: {
+    type: String
+  },
+  resetPasswordToken: String,
+  resetPasswordExpire: Date,
+  emailConfirmed: {
+    type: Boolean,
+    default: false
+  },
+  lastLogin: {
+    type: Date
   }
 });
 
