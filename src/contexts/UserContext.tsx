@@ -2,13 +2,14 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import api from '@/api';
 
+export type UserRole = 'user' | 'admin';
 export type SubscriptionPlan = 'free' | 'pro' | 'elite';
 
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'user' | 'admin';
+  role: UserRole;
   subscriptionPlan: SubscriptionPlan;
   profileImage?: string;
   bio?: string;
@@ -18,6 +19,8 @@ export interface User {
   weight?: number;
   fitnessGoal?: string;
   token?: string;
+  createdAt: Date;
+  subscriptionDate?: Date;
 }
 
 interface UserContextType {
@@ -26,9 +29,11 @@ interface UserContextType {
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
+  signup: (name: string, email: string, password: string) => Promise<void>; // Alias for register
   logout: () => void;
   updateUser: (userData: Partial<User>) => Promise<void>;
   updateSubscription: (plan: SubscriptionPlan) => Promise<void>;
+  isAdmin: () => boolean;
 }
 
 const UserContext = createContext<UserContextType>({
@@ -37,9 +42,11 @@ const UserContext = createContext<UserContextType>({
   error: null,
   login: async () => {},
   register: async () => {},
+  signup: async () => {},
   logout: () => {},
   updateUser: async () => {},
-  updateSubscription: async () => {}
+  updateSubscription: async () => {},
+  isAdmin: () => false
 });
 
 interface UserProviderProps {
@@ -58,7 +65,26 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       if (token) {
         try {
           const response = await api.get('/auth/me');
-          setUser(response.data.user);
+          
+          // Transform the response data to match our User interface
+          const userData = response.data.user;
+          
+          setUser({
+            id: userData._id || userData.id,
+            name: userData.name,
+            email: userData.email,
+            role: userData.role,
+            subscriptionPlan: userData.subscriptionPlan,
+            profileImage: userData.profileImage,
+            bio: userData.bio,
+            gender: userData.gender,
+            age: userData.age,
+            height: userData.height,
+            weight: userData.weight,
+            fitnessGoal: userData.fitnessGoal,
+            createdAt: new Date(userData.createdAt),
+            subscriptionDate: userData.subscriptionDate ? new Date(userData.subscriptionDate) : undefined
+          });
         } catch (error) {
           localStorage.removeItem('fitnessToken');
         }
@@ -80,7 +106,13 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       const { token, ...userData } = response.data.user;
       
       localStorage.setItem('fitnessToken', token);
-      setUser(userData);
+      
+      setUser({
+        ...userData,
+        id: userData._id || userData.id,
+        createdAt: new Date(userData.createdAt),
+        subscriptionDate: userData.subscriptionDate ? new Date(userData.subscriptionDate) : undefined
+      });
     } catch (error: any) {
       setError(error.response?.data?.message || 'Login failed');
       throw error;
@@ -99,7 +131,13 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       const { token, ...userData } = response.data.user;
       
       localStorage.setItem('fitnessToken', token);
-      setUser(userData);
+      
+      setUser({
+        ...userData,
+        id: userData._id || userData.id,
+        createdAt: new Date(userData.createdAt),
+        subscriptionDate: userData.subscriptionDate ? new Date(userData.subscriptionDate) : undefined
+      });
     } catch (error: any) {
       setError(error.response?.data?.message || 'Registration failed');
       throw error;
@@ -107,6 +145,9 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       setIsLoading(false);
     }
   };
+
+  // Alias for register
+  const signup = register;
 
   const logout = () => {
     localStorage.removeItem('fitnessToken');
@@ -128,7 +169,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       });
       
       // Add profile image if provided
-      if (userData.profileImage instanceof File) {
+      if (userData.profileImage && typeof userData.profileImage !== 'string') {
         formData.append('image', userData.profileImage);
       }
       
@@ -138,7 +179,14 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         },
       });
       
-      setUser(prev => prev ? { ...prev, ...response.data.user } : response.data.user);
+      const updatedUserData = response.data.user;
+      
+      setUser(prev => prev ? {
+        ...prev,
+        ...updatedUserData,
+        id: updatedUserData._id || updatedUserData.id || prev.id,
+        createdAt: prev.createdAt
+      } : null);
     } catch (error: any) {
       setError(error.response?.data?.message || 'Profile update failed');
       throw error;
@@ -156,7 +204,11 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       // to update the user's subscription plan
       if (user) {
         // For now, we'll just update the user state locally
-        setUser({ ...user, subscriptionPlan: plan });
+        setUser({ 
+          ...user, 
+          subscriptionPlan: plan,
+          subscriptionDate: new Date()
+        });
       }
     } catch (error: any) {
       setError('Subscription update failed');
@@ -164,6 +216,10 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const isAdmin = () => {
+    return user?.role === 'admin';
   };
 
   return (
@@ -174,9 +230,11 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         error,
         login,
         register,
+        signup,
         logout,
         updateUser,
-        updateSubscription
+        updateSubscription,
+        isAdmin
       }}
     >
       {children}

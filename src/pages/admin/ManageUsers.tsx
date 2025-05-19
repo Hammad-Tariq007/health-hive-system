@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useUser, UserRole } from "@/contexts/UserContext";
+import { useUser } from "@/contexts/UserContext";
 import AdminLayout from "./AdminLayout";
 import { motion } from "framer-motion";
 import { ArrowUpDown, Search, Trash2, Shield, User as UserIcon, MoreHorizontal } from "lucide-react";
@@ -38,13 +38,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-// Import User type from contexts/UserContext.tsx but rename it to UserType
-import { User as UserType } from "@/contexts/UserContext";
+// Import User type and other types from contexts/UserContext.tsx
+import { User as UserType, UserRole } from "@/contexts/UserContext";
 import { userAPI } from "@/api"; // Import the API
 
 type UserStatus = 'active' | 'inactive';
 
-interface UserData extends UserType {
+interface UserData extends Omit<UserType, 'createdAt'> {
+  createdAt: Date;
   status: UserStatus;
 }
 
