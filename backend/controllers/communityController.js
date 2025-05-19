@@ -1,48 +1,87 @@
 
-const CommunityPost = require('../models/CommunityPost');
+const CommunityPost = require('../models/Community');
+const User = require('../models/User');
 
-// @desc    Create a new community post
+// @desc    Get all community posts
+// @route   GET /api/community
+// @access  Public
+exports.getPosts = async (req, res) => {
+  try {
+    const posts = await CommunityPost.find()
+      .sort('-createdAt')
+      .populate('user', 'name email profileImage')
+      .populate('comments.user', 'name profileImage');
+    
+    res.json({
+      success: true,
+      count: posts.length,
+      posts
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Get single community post
+// @route   GET /api/community/:id
+// @access  Public
+exports.getPost = async (req, res) => {
+  try {
+    const post = await CommunityPost.findById(req.params.id)
+      .populate('user', 'name email profileImage')
+      .populate('comments.user', 'name profileImage');
+    
+    if (!post) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+    
+    res.json({
+      success: true,
+      post
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Create new community post
 // @route   POST /api/community
 // @access  Private
 exports.createPost = async (req, res) => {
   try {
-    const { content, tags } = req.body;
-
-    // Determine media type based on uploaded file
-    let mediaType = 'text';
-    let mediaUrl = '';
+    const { text, tags } = req.body;
     
-    if (req.file) {
-      if (req.file.mimetype.startsWith('image')) {
-        mediaType = 'image';
-      } else if (req.file.mimetype.startsWith('audio')) {
-        mediaType = 'audio';
-      } else if (req.file.mimetype.startsWith('video')) {
-        mediaType = 'video';
-      }
+    // Handle media upload
+    let media = [];
+    let mediaType = 'none';
+    
+    if (req.files && req.files.length > 0) {
+      media = req.files.map(file => file.filename);
       
-      mediaUrl = req.file.filename;
-    } else if (!content) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Post must include either content or media' 
-      });
+      // Determine media type based on first file's mimetype
+      const mimeType = req.files[0].mimetype;
+      if (mimeType.startsWith('image/')) {
+        mediaType = 'image';
+      } else if (mimeType.startsWith('video/')) {
+        mediaType = 'video';
+      } else if (mimeType.startsWith('audio/')) {
+        mediaType = 'audio';
+      }
     }
-
+    
     const post = await CommunityPost.create({
       user: req.user.id,
-      content,
+      text,
       mediaType,
-      mediaUrl,
-      tags: tags || []
+      media,
+      tags: tags ? tags.split(',').map(tag => tag.trim()) : []
     });
-
-    // Populate user details for the response
-    const populatedPost = await CommunityPost.findById(post._id).populate({
-      path: 'user',
-      select: 'name email profileImage'
-    });
-
+    
+    // Populate user data
+    const populatedPost = await CommunityPost.findById(post._id).populate('user', 'name email profileImage');
+    
     res.status(201).json({
       success: true,
       post: populatedPost
@@ -53,69 +92,84 @@ exports.createPost = async (req, res) => {
   }
 };
 
-// @desc    Get all community posts
-// @route   GET /api/community
-// @access  Public
-exports.getPosts = async (req, res) => {
+// @desc    Update community post
+// @route   PUT /api/community/:id
+// @access  Private
+exports.updatePost = async (req, res) => {
   try {
-    const { mediaType, tag, search } = req.query;
+    const { text, tags } = req.body;
     
-    // Build query object
-    const queryObject = {};
+    let post = await CommunityPost.findById(req.params.id);
     
-    if (mediaType && mediaType !== 'all') {
-      queryObject.mediaType = mediaType;
+    if (!post) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
     }
     
-    if (tag) {
-      queryObject.tags = { $in: [tag] };
+    // Check if user owns the post
+    if (post.user.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(401).json({ success: false, message: 'Not authorized to update this post' });
     }
     
-    if (search) {
-      queryObject.content = { $regex: search, $options: 'i' };
-    }
+    // Update text and tags
+    post.text = text || post.text;
+    post.tags = tags ? tags.split(',').map(tag => tag.trim()) : post.tags;
     
-    // Pagination
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 10;
-    const startIndex = (page - 1) * limit;
-    
-    // Query database
-    const posts = await CommunityPost.find(queryObject)
-      .skip(startIndex)
-      .limit(limit)
-      .sort('-createdAt')
-      .populate({
-        path: 'user',
-        select: 'name email profileImage'
-      });
+    // Handle media upload
+    if (req.files && req.files.length > 0) {
+      const newMedia = req.files.map(file => file.filename);
+      post.media = [...post.media, ...newMedia];
       
-    // Get total count for pagination
-    const total = await CommunityPost.countDocuments(queryObject);
-    
-    // Pagination results
-    const pagination = {};
-    
-    if (startIndex + limit < total) {
-      pagination.next = {
-        page: page + 1,
-        limit
-      };
+      // Update media type if it was 'none' before
+      if (post.mediaType === 'none') {
+        const mimeType = req.files[0].mimetype;
+        if (mimeType.startsWith('image/')) {
+          post.mediaType = 'image';
+        } else if (mimeType.startsWith('video/')) {
+          post.mediaType = 'video';
+        } else if (mimeType.startsWith('audio/')) {
+          post.mediaType = 'audio';
+        }
+      }
     }
     
-    if (startIndex > 0) {
-      pagination.prev = {
-        page: page - 1,
-        limit
-      };
-    }
+    await post.save();
+    
+    // Populate user data
+    const populatedPost = await CommunityPost.findById(post._id)
+      .populate('user', 'name email profileImage')
+      .populate('comments.user', 'name profileImage');
     
     res.json({
       success: true,
-      count: posts.length,
-      total,
-      pagination,
-      posts
+      post: populatedPost
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Delete community post
+// @route   DELETE /api/community/:id
+// @access  Private
+exports.deletePost = async (req, res) => {
+  try {
+    const post = await CommunityPost.findById(req.params.id);
+    
+    if (!post) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+    
+    // Check if user owns the post or is admin
+    if (post.user.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(401).json({ success: false, message: 'Not authorized to delete this post' });
+    }
+    
+    await CommunityPost.findByIdAndDelete(req.params.id);
+    
+    res.json({
+      success: true,
+      message: 'Post removed'
     });
   } catch (error) {
     console.error(error);
@@ -135,44 +189,35 @@ exports.likePost = async (req, res) => {
     }
     
     // Check if post has already been liked by this user
-    if (post.likes.includes(req.user.id)) {
+    if (post.likes.some(like => like.toString() === req.user.id)) {
       // Unlike the post
-      post.likes = post.likes.filter(
-        like => like.toString() !== req.user.id
-      );
+      post.likes = post.likes.filter(like => like.toString() !== req.user.id);
     } else {
       // Like the post
-      post.likes.push(req.user.id);
+      post.likes.unshift(req.user.id);
     }
     
     await post.save();
     
     res.json({
       success: true,
-      likes: post.likes.length,
-      liked: post.likes.includes(req.user.id)
+      likes: post.likes
     });
   } catch (error) {
     console.error(error);
-    
-    // Handle invalid ObjectId format
-    if (error.kind === 'ObjectId') {
-      return res.status(404).json({ success: false, message: 'Post not found' });
-    }
-    
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 };
 
-// @desc    Comment on a community post
-// @route   POST /api/community/:id/comment
+// @desc    Add comment to community post
+// @route   POST /api/community/:id/comments
 // @access  Private
 exports.addComment = async (req, res) => {
   try {
-    const { content } = req.body;
+    const { text } = req.body;
     
-    if (!content) {
-      return res.status(400).json({ success: false, message: 'Comment content is required' });
+    if (!text) {
+      return res.status(400).json({ success: false, message: 'Comment text is required' });
     }
     
     const post = await CommunityPost.findById(req.params.id);
@@ -182,73 +227,62 @@ exports.addComment = async (req, res) => {
     }
     
     // Add comment
-    post.comments.push({
+    post.comments.unshift({
       user: req.user.id,
-      content
+      text
     });
     
     await post.save();
     
-    // Get the newly added comment with user details
-    const updatedPost = await CommunityPost.findById(req.params.id).populate({
-      path: 'comments.user',
-      select: 'name email profileImage'
-    });
-    
-    const newComment = updatedPost.comments[updatedPost.comments.length - 1];
+    // Populate user data
+    const populatedPost = await CommunityPost.findById(post._id).populate('comments.user', 'name profileImage');
     
     res.json({
       success: true,
-      comment: newComment
+      comments: populatedPost.comments
     });
   } catch (error) {
     console.error(error);
-    
-    // Handle invalid ObjectId format
-    if (error.kind === 'ObjectId') {
-      return res.status(404).json({ success: false, message: 'Post not found' });
-    }
-    
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 };
 
-// @desc    Delete community post
-// @route   DELETE /api/community/:id
-// @access  Private/Admin or Post Owner
-exports.deletePost = async (req, res) => {
+// @desc    Delete comment from community post
+// @route   DELETE /api/community/:id/comments/:commentId
+// @access  Private
+exports.deleteComment = async (req, res) => {
   try {
-    const post = await CommunityPost.findById(req.params.id).populate({
-      path: 'user',
-      select: '_id'
-    });
+    const post = await CommunityPost.findById(req.params.id);
     
     if (!post) {
       return res.status(404).json({ success: false, message: 'Post not found' });
     }
     
-    // Check if user is post owner or admin
-    if (post.user._id.toString() !== req.user.id && req.user.role !== 'admin') {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Not authorized to delete this post' 
-      });
+    // Find comment
+    const comment = post.comments.find(comment => comment.id === req.params.commentId);
+    
+    if (!comment) {
+      return res.status(404).json({ success: false, message: 'Comment not found' });
     }
     
-    await CommunityPost.findByIdAndDelete(req.params.id);
+    // Check if user owns the comment or post or is admin
+    if (comment.user.toString() !== req.user.id && 
+        post.user.toString() !== req.user.id && 
+        req.user.role !== 'admin') {
+      return res.status(401).json({ success: false, message: 'Not authorized to delete this comment' });
+    }
+    
+    // Remove comment
+    post.comments = post.comments.filter(comment => comment.id !== req.params.commentId);
+    
+    await post.save();
     
     res.json({
       success: true,
-      message: 'Community post successfully deleted'
+      comments: post.comments
     });
   } catch (error) {
     console.error(error);
-    
-    // Handle invalid ObjectId format
-    if (error.kind === 'ObjectId') {
-      return res.status(404).json({ success: false, message: 'Post not found' });
-    }
-    
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 };

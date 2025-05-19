@@ -1,24 +1,33 @@
 
 const express = require('express');
 const communityController = require('../controllers/communityController');
-const { protect, admin } = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/authMiddleware');
 const { upload } = require('../middleware/uploadMiddleware');
 
 const router = express.Router();
 
-// Get all posts (public)
+// Get all posts
 router.get('/', communityController.getPosts);
 
-// Create post (auth required)
-router.post('/', protect, upload.single('media'), communityController.createPost);
+// Get single post
+router.get('/:id', communityController.getPost);
 
-// Like a post (auth required)
+// Create post (requires authentication)
+router.post('/', protect, upload.array('media', 5), communityController.createPost);
+
+// Update post (requires authentication)
+router.put('/:id', protect, upload.array('media', 5), communityController.updatePost);
+
+// Delete post (requires authentication)
+router.delete('/:id', protect, communityController.deletePost);
+
+// Like post (requires authentication)
 router.post('/:id/like', protect, communityController.likePost);
 
-// Comment on a post (auth required)
-router.post('/:id/comment', protect, communityController.addComment);
+// Add comment to post (requires authentication)
+router.post('/:id/comments', protect, communityController.addComment);
 
-// Delete post (admin or post owner)
-router.delete('/:id', protect, communityController.deletePost);
+// Delete comment from post (requires authentication)
+router.delete('/:id/comments/:commentId', protect, communityController.deleteComment);
 
 module.exports = router;

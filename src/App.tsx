@@ -42,7 +42,18 @@ import GDPR from "./pages/GDPR";
 // Import user context
 import { UserProvider } from "./contexts/UserContext";
 
-const queryClient = new QueryClient();
+// Import protected route component
+import ProtectedRoute from "./components/utils/ProtectedRoute";
+import AdminRoute from "./components/utils/AdminRoute";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -61,11 +72,29 @@ const App = () => (
               <Route path="/nutrition" element={<Nutrition />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/community" element={<Community />} />
-              <Route path="/dashboard" element={<UserDashboard />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/edit-profile" element={<EditProfile />} />
+              
+              {/* Protected routes for logged in users only */}
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <UserDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              } />
+              <Route path="/edit-profile" element={
+                <ProtectedRoute>
+                  <EditProfile />
+                </ProtectedRoute>
+              } />
               <Route path="/bmi-calculator" element={<BmiCalculator />} />
-              <Route path="/subscribe" element={<Subscribe />} />
+              <Route path="/subscribe" element={
+                <ProtectedRoute>
+                  <Subscribe />
+                </ProtectedRoute>
+              } />
               
               {/* Company Pages */}
               <Route path="/about" element={<AboutUs />} />
@@ -82,13 +111,34 @@ const App = () => (
               <Route path="/gdpr" element={<GDPR />} />
             </Route>
             
-            {/* Admin Routes - These don't use the main Layout component */}
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/users" element={<ManageUsers />} />
-            <Route path="/admin/workouts" element={<ManageWorkouts />} />
-            <Route path="/admin/nutrition" element={<ManageNutrition />} />
-            <Route path="/admin/blog" element={<ManageBlog />} />
+            {/* Admin Routes with special Admin protection */}
+            <Route path="/admin" element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            } />
+            <Route path="/admin/users" element={
+              <AdminRoute>
+                <ManageUsers />
+              </AdminRoute>
+            } />
+            <Route path="/admin/workouts" element={
+              <AdminRoute>
+                <ManageWorkouts />
+              </AdminRoute>
+            } />
+            <Route path="/admin/nutrition" element={
+              <AdminRoute>
+                <ManageNutrition />
+              </AdminRoute>
+            } />
+            <Route path="/admin/blog" element={
+              <AdminRoute>
+                <ManageBlog />
+              </AdminRoute>
+            } />
             
+            {/* Auth pages outside of main layout */}
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="*" element={<NotFound />} />

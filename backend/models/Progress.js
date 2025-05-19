@@ -14,31 +14,26 @@ const ProgressSchema = new mongoose.Schema({
   weight: {
     type: Number
   },
-  calories: {
+  bodyFat: {
     type: Number
   },
-  workoutsCompleted: {
-    type: Number
-  },
-  waterIntake: {
-    type: Number
-  },
-  bodyMeasurements: {
+  measurement: {
     chest: Number,
     waist: Number,
     hips: Number,
     thighs: Number,
-    arms: Number
+    arms: Number,
+    shoulders: Number,
+    other: Map
   },
-  photos: [{
-    type: String
-  }],
+  photos: {
+    type: [String],
+    default: []
+  },
   notes: {
-    type: String
+    type: String,
+    default: ''
   }
 });
-
-// Ensure users can only have one progress entry per day
-ProgressSchema.index({ user: 1, date: 1 }, { unique: true });
 
 module.exports = mongoose.model('Progress', ProgressSchema);

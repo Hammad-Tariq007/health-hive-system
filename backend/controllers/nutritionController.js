@@ -1,7 +1,54 @@
 
-const NutritionPlan = require('../models/NutritionPlan');
+const Nutrition = require('../models/Nutrition');
+const User = require('../models/User');
 
-// @desc    Create a new nutrition plan
+// @desc    Get all nutrition plans
+// @route   GET /api/nutrition
+// @access  Public
+exports.getNutritionPlans = async (req, res) => {
+  try {
+    const { dietType } = req.query;
+    
+    let query = {};
+    if (dietType) {
+      query.dietType = dietType;
+    }
+    
+    const nutritionPlans = await Nutrition.find(query).sort('-createdAt');
+    
+    res.json({
+      success: true,
+      count: nutritionPlans.length,
+      nutritionPlans
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Get single nutrition plan
+// @route   GET /api/nutrition/:id
+// @access  Public
+exports.getNutritionPlan = async (req, res) => {
+  try {
+    const nutritionPlan = await Nutrition.findById(req.params.id);
+    
+    if (!nutritionPlan) {
+      return res.status(404).json({ success: false, message: 'Nutrition plan not found' });
+    }
+    
+    res.json({
+      success: true,
+      nutritionPlan
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Create nutrition plan
 // @route   POST /api/nutrition
 // @access  Private/Admin
 exports.createNutritionPlan = async (req, res) => {
@@ -10,30 +57,56 @@ exports.createNutritionPlan = async (req, res) => {
       title, 
       description, 
       dietType, 
-      goal, 
       totalCalories, 
+      goal, 
+      duration,
+      difficulty,
+      suitableFor,
       macros,
       meals 
     } = req.body;
-
-    // Handle nutrition plan image if uploaded
-    let image = 'default-nutrition.jpg';
+    
+    // Handle image upload
+    let image = null;
     if (req.file) {
       image = req.file.filename;
     }
-
-    const nutritionPlan = await NutritionPlan.create({
+    
+    // Parse complex objects from form data
+    let parsedMacros = macros;
+    let parsedMeals = meals;
+    
+    if (typeof macros === 'string') {
+      try {
+        parsedMacros = JSON.parse(macros);
+      } catch (err) {
+        console.error('Error parsing macros:', err);
+      }
+    }
+    
+    if (typeof meals === 'string') {
+      try {
+        parsedMeals = JSON.parse(meals);
+      } catch (err) {
+        console.error('Error parsing meals:', err);
+      }
+    }
+    
+    const nutritionPlan = await Nutrition.create({
       title,
       description,
       dietType,
+      totalCalories: totalCalories ? parseFloat(totalCalories) : undefined,
       goal,
-      totalCalories,
-      macros,
-      meals: meals || [],
+      duration: duration ? parseInt(duration) : undefined,
+      difficulty,
+      suitableFor: suitableFor ? suitableFor.split(',') : [],
       image,
+      macros: parsedMacros,
+      meals: parsedMeals,
       createdBy: req.user.id
     });
-
+    
     res.status(201).json({
       success: true,
       nutritionPlan
@@ -44,132 +117,68 @@ exports.createNutritionPlan = async (req, res) => {
   }
 };
 
-// @desc    Get all nutrition plans
-// @route   GET /api/nutrition
-// @access  Public
-exports.getNutritionPlans = async (req, res) => {
-  try {
-    const { dietType, goal, search } = req.query;
-    
-    // Build query object
-    const queryObject = {};
-    
-    if (dietType) {
-      queryObject.dietType = dietType;
-    }
-    
-    if (goal) {
-      queryObject.goal = goal;
-    }
-    
-    if (search) {
-      queryObject.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
-      ];
-    }
-    
-    // Pagination
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 10;
-    const startIndex = (page - 1) * limit;
-    
-    // Query database
-    const nutritionPlans = await NutritionPlan.find(queryObject)
-      .skip(startIndex)
-      .limit(limit)
-      .sort('-createdAt')
-      .populate({
-        path: 'createdBy',
-        select: 'name email'
-      });
-      
-    // Get total count for pagination
-    const total = await NutritionPlan.countDocuments(queryObject);
-    
-    // Pagination results
-    const pagination = {};
-    
-    if (startIndex + limit < total) {
-      pagination.next = {
-        page: page + 1,
-        limit
-      };
-    }
-    
-    if (startIndex > 0) {
-      pagination.prev = {
-        page: page - 1,
-        limit
-      };
-    }
-    
-    res.json({
-      success: true,
-      count: nutritionPlans.length,
-      total,
-      pagination,
-      nutritionPlans
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'Server error', error: error.message });
-  }
-};
-
-// @desc    Get single nutrition plan by ID
-// @route   GET /api/nutrition/:id
-// @access  Public
-exports.getNutritionPlan = async (req, res) => {
-  try {
-    const nutritionPlan = await NutritionPlan.findById(req.params.id).populate({
-      path: 'createdBy',
-      select: 'name email'
-    });
-    
-    if (!nutritionPlan) {
-      return res.status(404).json({ success: false, message: 'Nutrition plan not found' });
-    }
-    
-    res.json({
-      success: true,
-      nutritionPlan
-    });
-  } catch (error) {
-    console.error(error);
-    
-    // Handle invalid ObjectId format
-    if (error.kind === 'ObjectId') {
-      return res.status(404).json({ success: false, message: 'Nutrition plan not found' });
-    }
-    
-    res.status(500).json({ success: false, message: 'Server error', error: error.message });
-  }
-};
-
 // @desc    Update nutrition plan
 // @route   PUT /api/nutrition/:id
 // @access  Private/Admin
 exports.updateNutritionPlan = async (req, res) => {
   try {
-    let nutritionPlan = await NutritionPlan.findById(req.params.id);
+    let nutritionPlan = await Nutrition.findById(req.params.id);
     
     if (!nutritionPlan) {
       return res.status(404).json({ success: false, message: 'Nutrition plan not found' });
     }
     
-    const updateData = { ...req.body };
+    const { 
+      title, 
+      description, 
+      dietType, 
+      totalCalories, 
+      goal, 
+      duration,
+      difficulty,
+      suitableFor,
+      macros,
+      meals 
+    } = req.body;
     
-    // Handle nutrition plan image if uploaded
+    // Handle image upload
     if (req.file) {
-      updateData.image = req.file.filename;
+      nutritionPlan.image = req.file.filename;
     }
     
-    nutritionPlan = await NutritionPlan.findByIdAndUpdate(
-      req.params.id,
-      updateData,
-      { new: true, runValidators: true }
-    );
+    // Parse complex objects from form data
+    let parsedMacros = macros;
+    let parsedMeals = meals;
+    
+    if (typeof macros === 'string') {
+      try {
+        parsedMacros = JSON.parse(macros);
+      } catch (err) {
+        console.error('Error parsing macros:', err);
+      }
+    }
+    
+    if (typeof meals === 'string') {
+      try {
+        parsedMeals = JSON.parse(meals);
+      } catch (err) {
+        console.error('Error parsing meals:', err);
+      }
+    }
+    
+    // Update fields
+    if (title) nutritionPlan.title = title;
+    if (description) nutritionPlan.description = description;
+    if (dietType) nutritionPlan.dietType = dietType;
+    if (totalCalories) nutritionPlan.totalCalories = parseFloat(totalCalories);
+    if (goal) nutritionPlan.goal = goal;
+    if (duration) nutritionPlan.duration = parseInt(duration);
+    if (difficulty) nutritionPlan.difficulty = difficulty;
+    if (suitableFor) nutritionPlan.suitableFor = suitableFor.split(',');
+    if (parsedMacros) nutritionPlan.macros = parsedMacros;
+    if (parsedMeals) nutritionPlan.meals = parsedMeals;
+    
+    await nutritionPlan.save();
     
     res.json({
       success: true,
@@ -177,12 +186,6 @@ exports.updateNutritionPlan = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    
-    // Handle invalid ObjectId format
-    if (error.kind === 'ObjectId') {
-      return res.status(404).json({ success: false, message: 'Nutrition plan not found' });
-    }
-    
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 };
@@ -192,26 +195,20 @@ exports.updateNutritionPlan = async (req, res) => {
 // @access  Private/Admin
 exports.deleteNutritionPlan = async (req, res) => {
   try {
-    const nutritionPlan = await NutritionPlan.findById(req.params.id);
+    const nutritionPlan = await Nutrition.findById(req.params.id);
     
     if (!nutritionPlan) {
       return res.status(404).json({ success: false, message: 'Nutrition plan not found' });
     }
     
-    await NutritionPlan.findByIdAndDelete(req.params.id);
+    await Nutrition.findByIdAndDelete(req.params.id);
     
     res.json({
       success: true,
-      message: 'Nutrition plan successfully deleted'
+      message: 'Nutrition plan removed'
     });
   } catch (error) {
     console.error(error);
-    
-    // Handle invalid ObjectId format
-    if (error.kind === 'ObjectId') {
-      return res.status(404).json({ success: false, message: 'Nutrition plan not found' });
-    }
-    
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 };

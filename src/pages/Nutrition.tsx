@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 import { LazyLoadImage } from 'react-lazy-load-image-component';
 import { Skeleton } from "@/components/ui/skeleton";
 import 'react-lazy-load-image-component/src/effects/blur.css';
-import { nutritionAPI } from "@/api"; // Import the API
+import { nutritionAPI } from "@/api";
 import { useToast } from "@/hooks/use-toast";
 
 interface NutritionPlanMacros {
@@ -48,35 +48,39 @@ const Nutrition = () => {
         const response = await nutritionAPI.getAllNutritionPlans();
         console.log("Nutrition API response:", response.data);
         
-        // Transform API response to match component's expected format
-        const plans: NutritionPlan[] = response.data.nutritionPlans.map((plan: any) => ({
-          id: plan._id,
-          title: plan.title,
-          description: plan.description,
-          type: plan.dietType,
-          image: plan.image.startsWith('http') 
-            ? plan.image 
-            : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/uploads/${plan.image}`,
-          macros: {
-            protein: plan.macros?.protein
-              ? Math.round((plan.macros.protein * 4 / (plan.totalCalories || 2000)) * 100)
-              : 30,
-            carbs: plan.macros?.carbs
-              ? Math.round((plan.macros.carbs * 4 / (plan.totalCalories || 2000)) * 100)
-              : 40,
-            fats: plan.macros?.fat
-              ? Math.round((plan.macros.fat * 9 / (plan.totalCalories || 2000)) * 100)
-              : 30
-          },
-          keyFeatures: [
-            `${plan.totalCalories || 2000} calories per day`,
-            `${plan.meals?.length || 3} meals per day`,
-            `${plan.goal || 'Health'} focused`
-          ]
-        }));
-        
-        setAllPlans(plans);
-        setFilteredPlans(plans);
+        if (response.data.success) {
+          // Transform API response to match component's expected format
+          const plans: NutritionPlan[] = response.data.nutritionPlans.map((plan: any) => ({
+            id: plan._id,
+            title: plan.title,
+            description: plan.description,
+            type: plan.dietType,
+            image: plan.image.startsWith('http') 
+              ? plan.image 
+              : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/uploads/${plan.image}`,
+            macros: {
+              protein: plan.macros?.protein
+                ? Math.round((plan.macros.protein * 4 / (plan.totalCalories || 2000)) * 100)
+                : 30,
+              carbs: plan.macros?.carbs
+                ? Math.round((plan.macros.carbs * 4 / (plan.totalCalories || 2000)) * 100)
+                : 40,
+              fats: plan.macros?.fat
+                ? Math.round((plan.macros.fat * 9 / (plan.totalCalories || 2000)) * 100)
+                : 30
+            },
+            keyFeatures: [
+              `${plan.totalCalories || 2000} calories per day`,
+              `${plan.meals?.length || 3} meals per day`,
+              `${plan.goal || 'Health'} focused`
+            ]
+          }));
+          
+          setAllPlans(plans);
+          setFilteredPlans(plans);
+        } else {
+          throw new Error(response.data.message || "Failed to load nutrition plans");
+        }
       } catch (err: any) {
         console.error("Failed to fetch nutrition plans:", err);
         
@@ -89,7 +93,7 @@ const Nutrition = () => {
           variant: "destructive",
         });
         
-        // If we have dummy data from previous versions, use it as fallback
+        // Use fallback data if no plans are returned
         const dummyData = generateFallbackData();
         setAllPlans(dummyData);
         setFilteredPlans(dummyData);
@@ -203,7 +207,7 @@ const Nutrition = () => {
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3].map((item) => (
-                <Card key={item} className="overflow-hidden">
+                <Card key={item} className="overflow-hidden border-0 shadow-lg dark:shadow-none dark:bg-gray-900">
                   <div className="aspect-video w-full bg-muted">
                     <Skeleton className="w-full h-full" />
                   </div>
@@ -270,7 +274,7 @@ const Nutrition = () => {
                     whileHover={{ y: -5, transition: { duration: 0.2 } }}
                     className="h-full"
                   >
-                    <Card className="h-full flex flex-col overflow-hidden border-2 hover:border-fitness-primary/50 transition-all duration-300">
+                    <Card className="h-full flex flex-col overflow-hidden border-0 shadow-lg dark:shadow-none dark:bg-gray-900">
                       <div className="aspect-video w-full overflow-hidden relative">
                         <LazyLoadImage
                           src={plan.image}

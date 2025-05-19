@@ -1,577 +1,623 @@
 
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/contexts/UserContext';
-import { communityAPI } from '@/api';
-import { Label } from '@/components/ui/label';
-import { Facebook, Twitter, MessageCircle, Share2, Heart, Image, Video, Mic } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/contexts/UserContext";
+import { communityAPI } from "@/api";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Heart, MessageSquare, Share2, Send, Image, Loader2, Clock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-interface CommunityPost {
+interface Comment {
   _id: string;
   user: {
     _id: string;
     name: string;
     profileImage?: string;
   };
-  content: string;
-  mediaType: 'text' | 'image' | 'audio' | 'video' | 'none';
-  mediaUrl?: string;
-  likes: string[];
-  comments: {
+  text: string;
+  createdAt: string;
+}
+
+interface CommunityPost {
+  _id: string;
+  user: {
     _id: string;
-    user: {
-      _id: string;
-      name: string;
-      profileImage?: string;
-    };
-    content: string;
-    createdAt: string;
-  }[];
+    name: string;
+    email: string;
+    profileImage?: string;
+  };
+  text: string;
+  mediaType: 'none' | 'image' | 'video' | 'audio';
+  media: string[];
+  likes: string[];
+  comments: Comment[];
   tags: string[];
   createdAt: string;
 }
 
 const Community = () => {
-  const { user } = useUser();
-  const { toast } = useToast();
   const [posts, setPosts] = useState<CommunityPost[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [postContent, setPostContent] = useState('');
-  const [mediaFile, setMediaFile] = useState<File | null>(null);
-  const [mediaPreview, setMediaPreview] = useState<string | null>(null);
-  const [mediaType, setMediaType] = useState<'text' | 'image' | 'audio' | 'video'>('text');
-  const [commentContent, setCommentContent] = useState<{[key: string]: string}>({});
-  const [activeTab, setActiveTab] = useState('all');
-  const [newComment, setNewComment] = useState<{[key: string]: string}>({});
-  const [showComments, setShowComments] = useState<{[key: string]: boolean}>({});
-
+  const [newPostText, setNewPostText] = useState("");
+  const [newPostMedia, setNewPostMedia] = useState<FileList | null>(null);
+  const [newPostLoading, setNewPostLoading] = useState(false);
+  const [commentText, setCommentText] = useState<{ [key: string]: string }>({});
+  const [commentLoading, setCommentLoading] = useState<{ [key: string]: boolean }>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("all");
+  
+  const { toast } = useToast();
+  const { user } = useUser();
+  const navigate = useNavigate();
+  
   useEffect(() => {
-    fetchPosts();
-  }, [activeTab]);
-
-  const fetchPosts = async () => {
-    setLoading(true);
-    try {
-      const params: any = {};
-      if (activeTab !== 'all') {
-        params.mediaType = activeTab;
-      }
-      
-      const response = await communityAPI.getAllPosts(params);
-      setPosts(response.data.posts);
-    } catch (error) {
-      console.error('Error fetching posts:', error);
+    if (!user && !isLoading) {
       toast({
-        title: "Error",
-        description: "Failed to load community posts",
+        title: "For the full experience",
+        description: "Sign in to interact with the community and post content",
+      });
+    }
+    
+    fetchPosts();
+  }, [user, toast]);
+  
+  const fetchPosts = async () => {
+    try {
+      setIsLoading(true);
+      const response = await communityAPI.getPosts();
+      
+      if (response.data.success) {
+        setPosts(response.data.posts);
+      } else {
+        toast({
+          title: "Error loading community posts",
+          description: response.data.message || "Failed to load community posts",
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      console.error("Failed to fetch community posts:", error);
+      toast({
+        title: "Error loading community posts",
+        description: "Failed to load community posts. Please try again later.",
         variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
-
-  const handleMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const fileType = file.type.split('/')[0];
-    let type: 'image' | 'audio' | 'video' = 'image';
+  
+  const handleCreatePost = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    if (fileType === 'audio') {
-      type = 'audio';
-    } else if (fileType === 'video') {
-      type = 'video';
-    }
-    
-    setMediaType(type);
-    setMediaFile(file);
-    
-    // Create preview URL
-    const previewUrl = URL.createObjectURL(file);
-    setMediaPreview(previewUrl);
-  };
-
-  const handlePost = async () => {
     if (!user) {
       toast({
-        title: "Authentication Required",
-        description: "Please sign in to post in the community",
+        title: "Sign in required",
+        description: "Please sign in to create posts",
+      });
+      navigate('/login');
+      return;
+    }
+    
+    if (!newPostText.trim() && (!newPostMedia || newPostMedia.length === 0)) {
+      toast({
+        title: "Empty post",
+        description: "Please add text or media to your post",
         variant: "destructive"
       });
       return;
     }
     
-    if (!postContent.trim() && !mediaFile) {
-      toast({
-        title: "Empty Post",
-        description: "Please add content or media to your post",
-        variant: "destructive"
-      });
-      return;
-    }
+    setNewPostLoading(true);
     
     try {
       const formData = new FormData();
-      formData.append('content', postContent);
+      formData.append('text', newPostText);
       
-      if (mediaFile) {
-        formData.append('media', mediaFile);
+      if (newPostMedia) {
+        for (let i = 0; i < newPostMedia.length; i++) {
+          formData.append('media', newPostMedia[i]);
+        }
       }
       
       const response = await communityAPI.createPost(formData);
       
+      if (response.data.success) {
+        toast({
+          title: "Post created",
+          description: "Your post has been published to the community",
+        });
+        
+        // Add new post to beginning of list
+        setPosts([response.data.post, ...posts]);
+        
+        // Clear form
+        setNewPostText("");
+        setNewPostMedia(null);
+        
+        // Reset file input by clearing its value
+        const fileInput = document.getElementById('post-media') as HTMLInputElement;
+        if (fileInput) {
+          fileInput.value = '';
+        }
+      } else {
+        throw new Error(response.data.message || "Failed to create post");
+      }
+    } catch (error: any) {
+      console.error("Failed to create post:", error);
       toast({
-        title: "Post Created",
-        description: "Your post has been shared with the community",
-        variant: "default"
-      });
-      
-      // Reset form
-      setPostContent('');
-      setMediaFile(null);
-      setMediaPreview(null);
-      setMediaType('text');
-      
-      // Refresh posts
-      fetchPosts();
-      
-    } catch (error) {
-      console.error('Error creating post:', error);
-      toast({
-        title: "Post Failed",
-        description: "There was an error creating your post",
+        title: "Error creating post",
+        description: error.message || "Failed to create your post. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setNewPostLoading(false);
     }
   };
-
-  const handleLike = async (postId: string) => {
+  
+  const handleLikePost = async (postId: string) => {
     if (!user) {
       toast({
-        title: "Authentication Required",
+        title: "Sign in required",
         description: "Please sign in to like posts",
-        variant: "destructive"
       });
+      navigate('/login');
       return;
     }
     
     try {
       const response = await communityAPI.likePost(postId);
       
-      // Update posts state to reflect like
-      setPosts(prev => prev.map(post => {
-        if (post._id === postId) {
-          return {
-            ...post,
-            likes: response.data.liked 
-              ? [...post.likes, user.id]
-              : post.likes.filter(id => id !== user.id)
-          };
-        }
-        return post;
-      }));
-      
-    } catch (error) {
-      console.error('Error liking post:', error);
+      if (response.data.success) {
+        // Update post likes
+        setPosts(posts.map(post => {
+          if (post._id === postId) {
+            return { ...post, likes: response.data.likes };
+          }
+          return post;
+        }));
+      } else {
+        throw new Error(response.data.message || "Failed to like post");
+      }
+    } catch (error: any) {
+      console.error("Failed to like post:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to like post. Please try again.",
+        variant: "destructive"
+      });
     }
   };
-
-  const handleComment = async (postId: string) => {
+  
+  const handleAddComment = async (postId: string) => {
     if (!user) {
       toast({
-        title: "Authentication Required",
-        description: "Please sign in to comment",
-        variant: "destructive"
+        title: "Sign in required",
+        description: "Please sign in to comment on posts",
       });
+      navigate('/login');
       return;
     }
     
-    const content = newComment[postId];
-    
-    if (!content?.trim()) {
+    const text = commentText[postId]?.trim();
+    if (!text) {
       toast({
-        title: "Empty Comment",
-        description: "Please add content to your comment",
+        title: "Empty comment",
+        description: "Please add text to your comment",
         variant: "destructive"
       });
       return;
     }
+    
+    setCommentLoading({ ...commentLoading, [postId]: true });
     
     try {
-      const response = await communityAPI.commentOnPost(postId, content);
+      const response = await communityAPI.commentPost(postId, text);
       
-      // Update posts state to include new comment
-      setPosts(prev => prev.map(post => {
-        if (post._id === postId) {
-          return {
-            ...post,
-            comments: [...post.comments, response.data.comment]
-          };
-        }
-        return post;
-      }));
-      
-      // Reset comment input for this post
-      setNewComment(prev => ({
-        ...prev,
-        [postId]: ''
-      }));
-      
-    } catch (error) {
-      console.error('Error commenting on post:', error);
+      if (response.data.success) {
+        // Update post comments
+        setPosts(posts.map(post => {
+          if (post._id === postId) {
+            return { ...post, comments: response.data.comments };
+          }
+          return post;
+        }));
+        
+        // Clear comment text
+        setCommentText({ ...commentText, [postId]: '' });
+      } else {
+        throw new Error(response.data.message || "Failed to add comment");
+      }
+    } catch (error: any) {
+      console.error("Failed to add comment:", error);
       toast({
-        title: "Comment Failed",
-        description: "There was an error posting your comment",
+        title: "Error",
+        description: error.message || "Failed to add comment. Please try again.",
         variant: "destructive"
+      });
+    } finally {
+      setCommentLoading({ ...commentLoading, [postId]: false });
+    }
+  };
+  
+  const sharePost = (post: CommunityPost) => {
+    if (navigator.share) {
+      navigator.share({
+        title: `${post.user.name}'s post on FitnessFreaks`,
+        text: post.text,
+        url: `${window.location.origin}/community/post/${post._id}`
+      }).catch(error => {
+        console.error('Error sharing post:', error);
+        toast({
+          title: "Sharing failed",
+          description: "Could not share this post. Try again later.",
+          variant: "destructive"
+        });
+      });
+    } else {
+      // Fallback for browsers that don't support Web Share API
+      const url = `${window.location.origin}/community/post/${post._id}`;
+      navigator.clipboard.writeText(url).then(() => {
+        toast({
+          title: "Link copied",
+          description: "Post link copied to clipboard!"
+        });
       });
     }
   };
-
-  const toggleComments = (postId: string) => {
-    setShowComments(prev => ({
-      ...prev,
-      [postId]: !prev[postId]
-    }));
-  };
-
-  const handleShare = (post: CommunityPost, platform: 'facebook' | 'twitter' | 'whatsapp') => {
-    const baseUrl = window.location.origin;
-    const postUrl = `${baseUrl}/community/post/${post._id}`;
-    const text = post.content || 'Check out this post on FitnessFreaks';
-    
-    let shareUrl = '';
-    
-    switch (platform) {
-      case 'facebook':
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`;
-        break;
-      case 'twitter':
-        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(postUrl)}`;
-        break;
-      case 'whatsapp':
-        shareUrl = `https://wa.me/?text=${encodeURIComponent(`${text} ${postUrl}`)}`;
-        break;
-    }
-    
-    window.open(shareUrl, '_blank', 'width=600,height=400');
-  };
-
+  
+  // Format date for display
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleString();
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase();
-  };
-
+  
+  const filteredPosts = activeTab === 'all' 
+    ? posts 
+    : activeTab === 'media' 
+      ? posts.filter(post => post.mediaType !== 'none')
+      : posts.filter(post => post.tags.includes(activeTab));
+  
   return (
-    <div className="container py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Community</h1>
-        <p className="text-muted-foreground">
-          Connect with other fitness enthusiasts, share your progress, and get inspired
+    <div className="container py-12 mx-auto">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="text-center mb-12"
+      >
+        <h1 className="text-4xl font-bold tracking-tight mb-2">Community</h1>
+        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          Connect with fellow fitness enthusiasts, share your journey, and get inspired by others.
         </p>
-      </div>
+      </motion.div>
       
-      {user && (
-        <Card className="mb-8">
-          <CardContent className="pt-6">
-            <div className="flex gap-4">
-              <Avatar className="w-10 h-10">
-                <AvatarImage src={user.profileImage} alt={user.name} />
-                <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <Textarea
-                  placeholder="Share something with the community..."
-                  value={postContent}
-                  onChange={(e) => setPostContent(e.target.value)}
-                  className="mb-4 min-h-[100px]"
-                />
-                
-                {mediaPreview && (
-                  <div className="mb-4">
-                    {mediaType === 'image' && (
-                      <img src={mediaPreview} alt="Preview" className="max-h-[300px] rounded-lg" />
-                    )}
-                    {mediaType === 'video' && (
-                      <video src={mediaPreview} controls className="max-h-[300px] rounded-lg" />
-                    )}
-                    {mediaType === 'audio' && (
-                      <audio src={mediaPreview} controls className="w-full" />
-                    )}
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="mt-2"
-                      onClick={() => {
-                        setMediaFile(null);
-                        setMediaPreview(null);
-                      }}
-                    >
-                      Remove Media
-                    </Button>
-                  </div>
-                )}
-                
-                <div className="flex flex-wrap justify-between items-center gap-2">
-                  <div className="flex gap-2">
-                    <Label htmlFor="media-upload" className="cursor-pointer">
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary p-2 rounded-md hover:bg-muted transition-colors">
-                        <Image className="h-4 w-4" />
-                        <span>Image</span>
-                      </div>
-                    </Label>
-                    <Label htmlFor="media-upload" className="cursor-pointer">
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary p-2 rounded-md hover:bg-muted transition-colors">
-                        <Video className="h-4 w-4" />
-                        <span>Video</span>
-                      </div>
-                    </Label>
-                    <Label htmlFor="media-upload" className="cursor-pointer">
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary p-2 rounded-md hover:bg-muted transition-colors">
-                        <Mic className="h-4 w-4" />
-                        <span>Audio</span>
-                      </div>
-                    </Label>
-                    <input
-                      type="file"
-                      id="media-upload"
-                      className="hidden"
-                      accept="image/*,video/*,audio/*"
-                      onChange={handleMediaChange}
-                    />
-                  </div>
-                  
-                  <Button onClick={handlePost} className="bg-fitness-primary hover:bg-fitness-secondary">
-                    Post
-                  </Button>
-                </div>
-              </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
+            <div className="flex justify-between items-center mb-6">
+              <TabsList className="grid grid-cols-4 w-full max-w-md">
+                <TabsTrigger value="all" className="data-[state=active]:bg-fitness-primary data-[state=active]:text-white">
+                  All
+                </TabsTrigger>
+                <TabsTrigger value="media" className="data-[state=active]:bg-fitness-primary data-[state=active]:text-white">
+                  Media
+                </TabsTrigger>
+                <TabsTrigger value="nutrition" className="data-[state=active]:bg-fitness-primary data-[state=active]:text-white">
+                  Nutrition
+                </TabsTrigger>
+                <TabsTrigger value="workout" className="data-[state=active]:bg-fitness-primary data-[state=active]:text-white">
+                  Workout
+                </TabsTrigger>
+              </TabsList>
             </div>
-          </CardContent>
-        </Card>
-      )}
-      
-      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="all">All Posts</TabsTrigger>
-          <TabsTrigger value="image">Photos</TabsTrigger>
-          <TabsTrigger value="video">Videos</TabsTrigger>
-          <TabsTrigger value="audio">Audio</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value={activeTab} className="space-y-4">
-          {loading ? (
-            <div className="flex justify-center py-10">
-              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-            </div>
-          ) : posts.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-10">
-                <p className="text-muted-foreground mb-4">No posts found in this category</p>
-                {user ? (
-                  <Button onClick={() => setActiveTab('all')}>View All Posts</Button>
-                ) : (
-                  <Button onClick={() => window.location.href = '/login'}>Sign In to Post</Button>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            posts.map((post) => (
-              <motion.div
-                key={post._id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Card className="mb-4">
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-center gap-3">
-                        <Avatar>
-                          <AvatarImage src={post.user.profileImage} alt={post.user.name} />
-                          <AvatarFallback>{getInitials(post.user.name)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <CardTitle className="text-base font-medium">{post.user.name}</CardTitle>
-                          <p className="text-xs text-muted-foreground">
-                            {formatDate(post.createdAt)}
-                          </p>
+            
+            <TabsContent value={activeTab}>
+              {isLoading ? (
+                <div className="space-y-6">
+                  {[1, 2, 3].map((i) => (
+                    <Card key={i} className="border-0 shadow-lg dark:shadow-none dark:bg-gray-900">
+                      <CardHeader>
+                        <div className="flex items-center gap-4">
+                          <Skeleton className="h-12 w-12 rounded-full" />
+                          <div className="space-y-2">
+                            <Skeleton className="h-4 w-[150px]" />
+                            <Skeleton className="h-4 w-[100px]" />
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  
-                  <CardContent>
-                    {post.content && (
-                      <p className="mb-4 whitespace-pre-line">{post.content}</p>
-                    )}
-                    
-                    {post.mediaType !== 'text' && post.mediaUrl && (
-                      <div className="mb-4">
-                        {post.mediaType === 'image' && (
-                          <img 
-                            src={`${post.mediaUrl.startsWith('http') ? '' : '/uploads/'}${post.mediaUrl}`} 
-                            alt="Post media" 
-                            className="rounded-lg max-h-[400px] object-contain" 
-                          />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-4 w-2/3" />
+                        </div>
+                        <Skeleton className="h-[200px] w-full mt-4" />
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : filteredPosts.length > 0 ? (
+                <div className="space-y-6">
+                  {filteredPosts.map((post) => (
+                    <Card key={post._id} className="border-0 shadow-lg dark:shadow-none dark:bg-gray-900">
+                      <CardHeader className="pb-2">
+                        <div className="flex justify-between">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage src={post.user.profileImage} />
+                              <AvatarFallback className="bg-fitness-primary text-white">
+                                {post.user.name.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="font-medium">{post.user.name}</div>
+                              <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                <span>{formatDate(post.createdAt)}</span>
+                              </div>
+                            </div>
+                          </div>
+                          {post.tags.length > 0 && (
+                            <div className="flex gap-2">
+                              {post.tags.map((tag) => (
+                                <span 
+                                  key={tag} 
+                                  className="px-2 py-1 bg-fitness-primary/10 text-fitness-primary text-xs rounded-full"
+                                >
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="whitespace-pre-wrap mb-4">{post.text}</p>
+                        
+                        {post.mediaType !== 'none' && post.media.length > 0 && (
+                          <div className="mt-3 rounded-xl overflow-hidden">
+                            {post.mediaType === 'image' ? (
+                              <div className={`grid ${post.media.length > 1 ? 'grid-cols-2 gap-2' : 'grid-cols-1'}`}>
+                                {post.media.map((mediaUrl, index) => (
+                                  <img
+                                    key={index}
+                                    src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/uploads/${mediaUrl}`}
+                                    alt={`Post media ${index + 1}`}
+                                    className="w-full h-auto object-cover rounded-xl"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.src = "https://placehold.co/600x400/9b87f5/ffffff?text=Image+Not+Available";
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                            ) : post.mediaType === 'video' ? (
+                              <video 
+                                controls 
+                                className="w-full rounded-xl"
+                                src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/uploads/${post.media[0]}`}
+                              />
+                            ) : post.mediaType === 'audio' ? (
+                              <audio
+                                controls
+                                className="w-full mt-2"
+                                src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/uploads/${post.media[0]}`}
+                              />
+                            ) : null}
+                          </div>
                         )}
-                        {post.mediaType === 'video' && (
-                          <video 
-                            src={`${post.mediaUrl.startsWith('http') ? '' : '/uploads/'}${post.mediaUrl}`}
-                            controls
-                            className="w-full rounded-lg max-h-[400px]"
-                          />
-                        )}
-                        {post.mediaType === 'audio' && (
-                          <audio 
-                            src={`${post.mediaUrl.startsWith('http') ? '' : '/uploads/'}${post.mediaUrl}`}
-                            controls 
-                            className="w-full"
-                          />
-                        )}
-                      </div>
-                    )}
-                    
-                    <div className="flex flex-wrap gap-1 mt-2 mb-2">
-                      {post.tags.map((tag, i) => (
-                        <span 
-                          key={i} 
-                          className="bg-muted text-xs px-2 py-1 rounded-full"
-                        >
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
-                    
-                    <div className="flex justify-between items-center pt-4 border-t">
-                      <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleLike(post._id)}
-                          className={user && post.likes.includes(user.id) ? "text-red-500" : ""}
-                        >
-                          <Heart className="h-4 w-4 mr-1" />
-                          {post.likes.length}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleComments(post._id)}
-                        >
-                          <MessageCircle className="h-4 w-4 mr-1" />
-                          {post.comments.length}
-                        </Button>
-                      </div>
-                      
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleShare(post, 'facebook')}
-                        >
-                          <Facebook className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleShare(post, 'twitter')}
-                        >
-                          <Twitter className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            const text = post.content || 'Check out this FitnessFreaks post!';
-                            navigator.clipboard.writeText(`${text} - ${window.location.origin}/community/post/${post._id}`);
-                            toast({
-                              title: "Link Copied",
-                              description: "Post link copied to clipboard",
-                              variant: "default"
-                            });
-                          }}
-                        >
-                          <Share2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {showComments[post._id] && (
-                      <div className="mt-4 space-y-4">
-                        <div className="border-t pt-4">
-                          <h4 className="font-medium mb-2">Comments</h4>
-                          
-                          {post.comments.length > 0 ? (
+                        
+                        <div className="flex justify-between items-center mt-6 pt-4 border-t">
+                          <div className="flex gap-4">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="flex items-center gap-1 px-2"
+                              onClick={() => handleLikePost(post._id)}
+                            >
+                              <Heart 
+                                className={`h-5 w-5 ${user && post.likes.includes(user.id) ? 'text-red-500 fill-red-500' : ''}`} 
+                              />
+                              <span>{post.likes.length}</span>
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="flex items-center gap-1 px-2"
+                            >
+                              <MessageSquare className="h-5 w-5" />
+                              <span>{post.comments.length}</span>
+                            </Button>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="flex items-center gap-1 px-2"
+                            onClick={() => sharePost(post)}
+                          >
+                            <Share2 className="h-5 w-5" />
+                            <span>Share</span>
+                          </Button>
+                        </div>
+                        
+                        {/* Comments */}
+                        {post.comments.length > 0 && (
+                          <div className="mt-4 pt-2 border-t">
+                            <h4 className="font-medium mb-2">Comments</h4>
                             <div className="space-y-3">
-                              {post.comments.map((comment) => (
+                              {post.comments.slice(0, 3).map((comment) => (
                                 <div key={comment._id} className="flex gap-2">
-                                  <Avatar className="w-8 h-8">
-                                    <AvatarImage src={comment.user.profileImage} alt={comment.user.name} />
-                                    <AvatarFallback>{getInitials(comment.user.name)}</AvatarFallback>
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarImage src={comment.user.profileImage} />
+                                    <AvatarFallback className="bg-muted text-muted-foreground">
+                                      {comment.user.name.charAt(0)}
+                                    </AvatarFallback>
                                   </Avatar>
-                                  <div className="flex-1 bg-muted rounded-lg p-2">
-                                    <div className="flex justify-between items-center">
-                                      <p className="text-sm font-medium">{comment.user.name}</p>
-                                      <p className="text-xs text-muted-foreground">{formatDate(comment.createdAt)}</p>
-                                    </div>
-                                    <p className="text-sm mt-1">{comment.content}</p>
+                                  <div className="bg-muted rounded-xl px-3 py-2 text-sm flex-grow">
+                                    <div className="font-medium">{comment.user.name}</div>
+                                    <div>{comment.text}</div>
                                   </div>
                                 </div>
                               ))}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-muted-foreground">No comments yet</p>
-                          )}
-                          
-                          {user && (
-                            <div className="mt-4 flex gap-2">
-                              <Avatar className="w-8 h-8">
-                                <AvatarImage src={user.profileImage} alt={user.name} />
-                                <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1">
-                                <Input
-                                  placeholder="Add a comment..."
-                                  value={newComment[post._id] || ''}
-                                  onChange={(e) => setNewComment({...newComment, [post._id]: e.target.value})}
-                                  className="mb-2"
-                                />
-                                <Button 
-                                  size="sm"
-                                  onClick={() => handleComment(post._id)}
-                                  className="bg-fitness-primary hover:bg-fitness-secondary"
-                                >
-                                  Post Comment
+                              {post.comments.length > 3 && (
+                                <Button variant="link" className="text-fitness-primary px-0">
+                                  View all {post.comments.length} comments
                                 </Button>
-                              </div>
+                              )}
                             </div>
-                          )}
+                          </div>
+                        )}
+                        
+                        {/* Add Comment */}
+                        <div className="mt-3 pt-2 flex items-center gap-2">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={user?.profileImage} />
+                            <AvatarFallback className="bg-fitness-primary text-white">
+                              {user ? user.name.charAt(0) : 'G'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-grow flex gap-2">
+                            <Input
+                              placeholder="Add a comment..."
+                              value={commentText[post._id] || ''}
+                              onChange={(e) => setCommentText({ ...commentText, [post._id]: e.target.value })}
+                              className="rounded-xl h-10"
+                              disabled={!user}
+                            />
+                            <Button 
+                              size="sm" 
+                              onClick={() => handleAddComment(post._id)}
+                              disabled={commentLoading[post._id] || !commentText[post._id]?.trim() || !user}
+                              className="bg-fitness-primary hover:bg-fitness-secondary h-10 rounded-xl px-3"
+                            >
+                              {commentLoading[post._id] ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Send className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
                         </div>
-                      </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card className="border-0 shadow-lg dark:shadow-none dark:bg-gray-900">
+                  <CardContent className="pt-6 pb-6 text-center">
+                    <p className="text-muted-foreground">No posts found in this category.</p>
+                    {activeTab !== 'all' && (
+                      <Button 
+                        variant="link" 
+                        onClick={() => setActiveTab('all')}
+                        className="text-fitness-primary"
+                      >
+                        View all posts instead
+                      </Button>
                     )}
                   </CardContent>
                 </Card>
-              </motion.div>
-            ))
-          )}
-        </TabsContent>
-      </Tabs>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
+        
+        <div>
+          <Card className="border-0 shadow-lg dark:shadow-none dark:bg-gray-900">
+            <CardHeader>
+              <CardTitle className="text-xl">Create Post</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleCreatePost}>
+                <div className="space-y-4">
+                  <Textarea
+                    placeholder="Share your fitness journey, ask questions, or post progress..."
+                    value={newPostText}
+                    onChange={(e) => setNewPostText(e.target.value)}
+                    className="min-h-[120px] rounded-xl"
+                    disabled={!user}
+                  />
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="post-media" className="flex items-center gap-2">
+                      <Image className="h-4 w-4" />
+                      Add Media (Optional)
+                    </Label>
+                    <Input
+                      id="post-media"
+                      type="file"
+                      accept="image/*,video/*,audio/*"
+                      onChange={(e) => setNewPostMedia(e.target.files)}
+                      multiple
+                      className="rounded-xl"
+                      disabled={!user}
+                    />
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-fitness-primary hover:bg-fitness-secondary rounded-xl"
+                    disabled={newPostLoading || (!newPostText.trim() && (!newPostMedia || newPostMedia.length === 0)) || !user}
+                  >
+                    {newPostLoading ? (
+                      <span className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Posting...
+                      </span>
+                    ) : (
+                      "Share Post"
+                    )}
+                  </Button>
+                  
+                  {!user && (
+                    <p className="text-center text-sm text-muted-foreground">
+                      Please <a href="/login" className="text-fitness-primary font-medium">sign in</a> to create posts
+                    </p>
+                  )}
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+          
+          <Card className="mt-6 border-0 shadow-lg dark:shadow-none dark:bg-gray-900">
+            <CardHeader>
+              <CardTitle className="text-xl">Community Guidelines</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-1">
+                <p className="font-medium">Be Respectful</p>
+                <p className="text-sm text-muted-foreground">Treat others with kindness and respect</p>
+              </div>
+              <div className="space-y-1">
+                <p className="font-medium">Share Knowledge</p>
+                <p className="text-sm text-muted-foreground">Contribute helpful fitness and nutrition insights</p>
+              </div>
+              <div className="space-y-1">
+                <p className="font-medium">Stay Positive</p>
+                <p className="text-sm text-muted-foreground">Focus on encouragement and support</p>
+              </div>
+              <div className="space-y-1">
+                <p className="font-medium">Be Authentic</p>
+                <p className="text-sm text-muted-foreground">Share genuine experiences and progress</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };

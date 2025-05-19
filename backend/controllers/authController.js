@@ -78,6 +78,10 @@ exports.login = async (req, res) => {
 
     // Check if user exists and password matches
     if (user && (await user.matchPassword(password))) {
+      // Update last login
+      user.lastLogin = new Date();
+      await user.save();
+      
       res.json({
         success: true,
         user: {

@@ -31,7 +31,7 @@ const Layout = () => {
   }, [location.pathname]);
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-white dark:bg-gray-950">
       <Header scrolled={scrolled} />
       <AnimatePresence mode="wait">
         <motion.main 

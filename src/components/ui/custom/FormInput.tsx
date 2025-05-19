@@ -1,36 +1,41 @@
 
-import { InputHTMLAttributes, forwardRef } from "react";
+import React from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
 
-interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
-  description?: string;
+interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label: string;
+  id: string;
   error?: string;
-  className?: string;
-  containerClassName?: string;
+  description?: string;
 }
 
-const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
-  ({ label, description, error, className, containerClassName, ...props }, ref) => {
-    return (
-      <div className={cn("space-y-2", containerClassName)}>
-        {label && <Label htmlFor={props.id}>{label}</Label>}
-        <Input 
-          ref={ref} 
-          className={cn(error && "border-destructive", className)} 
-          {...props} 
-        />
-        {description && !error && (
-          <p className="text-sm text-muted-foreground">{description}</p>
-        )}
-        {error && <p className="text-sm font-medium text-destructive">{error}</p>}
-      </div>
-    );
-  }
-);
-
-FormInput.displayName = "FormInput";
-
-export { FormInput };
+export const FormInput: React.FC<FormInputProps> = ({
+  label,
+  id,
+  error,
+  description,
+  ...props
+}) => {
+  return (
+    <div className="space-y-2">
+      <Label
+        htmlFor={id}
+        className={error ? "text-destructive" : ""}
+      >
+        {label}
+      </Label>
+      <Input
+        id={id}
+        className={`${error ? "border-destructive" : ""} ${props.className || ""}`}
+        aria-invalid={error ? "true" : "false"}
+        {...props}
+      />
+      {error ? (
+        <p className="text-xs text-destructive mt-1">{error}</p>
+      ) : description ? (
+        <p className="text-xs text-muted-foreground mt-1">{description}</p>
+      ) : null}
+    </div>
+  );
+};

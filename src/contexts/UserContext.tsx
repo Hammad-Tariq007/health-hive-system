@@ -63,36 +63,57 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Check for token in URL params (for OAuth callbacks)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    
+    if (token) {
+      localStorage.setItem('fitnessToken', token);
+      // Remove token from URL to prevent issues on refresh
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
   useEffect(() => {
     const fetchCurrentUser = async () => {
       const token = localStorage.getItem('fitnessToken');
       
       if (token) {
         try {
+          // Set auth header for all requests
+          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          
           const response = await axios.get('/auth/me');
           
-          // Transform the response data to match our User interface
-          const userData = response.data.user;
-          
-          setUser({
-            id: userData._id || userData.id,
-            name: userData.name,
-            email: userData.email,
-            role: userData.role as UserRole,
-            subscriptionPlan: userData.subscriptionPlan as SubscriptionPlan,
-            profileImage: userData.profileImage,
-            bio: userData.bio,
-            gender: userData.gender,
-            age: userData.age,
-            height: userData.height,
-            weight: userData.weight,
-            fitnessGoal: userData.fitnessGoal,
-            createdAt: new Date(userData.createdAt),
-            subscriptionDate: userData.subscriptionDate ? new Date(userData.subscriptionDate) : undefined
-          });
+          if (response.data.success) {
+            // Transform the response data to match our User interface
+            const userData = response.data.user;
+            
+            setUser({
+              id: userData.id || userData._id,
+              name: userData.name,
+              email: userData.email,
+              role: userData.role as UserRole,
+              subscriptionPlan: userData.subscriptionPlan as SubscriptionPlan,
+              profileImage: userData.profileImage,
+              bio: userData.bio,
+              gender: userData.gender,
+              age: userData.age,
+              height: userData.height,
+              weight: userData.weight,
+              fitnessGoal: userData.fitnessGoal,
+              createdAt: new Date(userData.createdAt),
+              subscriptionDate: userData.subscriptionDate ? new Date(userData.subscriptionDate) : undefined
+            });
+          } else {
+            // If the request was successful but user data wasn't returned correctly
+            localStorage.removeItem('fitnessToken');
+          }
         } catch (error) {
           console.error("Failed to fetch current user:", error);
           localStorage.removeItem('fitnessToken');
+          delete axios.defaults.headers.common['Authorization'];
         }
       }
       
@@ -109,17 +130,26 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     try {
       const response = await axios.post('/auth/login', { email, password });
       
-      const { token, ...userData } = response.data.user;
-      
-      localStorage.setItem('fitnessToken', token);
-      
-      setUser({
-        ...userData,
-        id: userData._id || userData.id,
-        createdAt: new Date(userData.createdAt),
-        subscriptionDate: userData.subscriptionDate ? new Date(userData.subscriptionDate) : undefined
-      });
-      return;
+      if (response.data.success) {
+        const { token, ...userData } = response.data.user;
+        
+        localStorage.setItem('fitnessToken', token);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        
+        setUser({
+          ...userData,
+          id: userData.id || userData._id,
+          createdAt: new Date(userData.createdAt),
+          subscriptionDate: userData.subscriptionDate ? new Date(userData.subscriptionDate) : undefined
+        });
+        
+        toast({
+          title: "Login successful",
+          description: `Welcome back, ${userData.name}!`,
+        });
+      } else {
+        throw new Error(response.data.message || "Login failed");
+      }
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || "Login failed. Please check your credentials.";
       setError(errorMessage);
@@ -141,17 +171,26 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     try {
       const response = await axios.post('/auth/register', { name, email, password });
       
-      const { token, ...userData } = response.data.user;
-      
-      localStorage.setItem('fitnessToken', token);
-      
-      setUser({
-        ...userData,
-        id: userData._id || userData.id,
-        createdAt: new Date(userData.createdAt),
-        subscriptionDate: userData.subscriptionDate ? new Date(userData.subscriptionDate) : undefined
-      });
-      return;
+      if (response.data.success) {
+        const { token, ...userData } = response.data.user;
+        
+        localStorage.setItem('fitnessToken', token);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        
+        setUser({
+          ...userData,
+          id: userData.id || userData._id,
+          createdAt: new Date(userData.createdAt),
+          subscriptionDate: userData.subscriptionDate ? new Date(userData.subscriptionDate) : undefined
+        });
+        
+        toast({
+          title: "Registration successful",
+          description: `Welcome to FitnessFreaks, ${userData.name}!`,
+        });
+      } else {
+        throw new Error(response.data.message || "Registration failed");
+      }
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || "Registration failed. Please try again.";
       setError(errorMessage);
@@ -171,6 +210,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('fitnessToken');
+    delete axios.defaults.headers.common['Authorization'];
     setUser(null);
     window.location.href = '/';
   };
@@ -200,17 +240,31 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         },
       });
       
-      const updatedUserData = response.data.user;
-      
-      setUser(prev => prev ? {
-        ...prev,
-        ...updatedUserData,
-        id: updatedUserData._id || updatedUserData.id || prev.id,
-        createdAt: prev.createdAt
-      } : null);
+      if (response.data.success) {
+        const updatedUserData = response.data.user;
+        
+        setUser(prev => prev ? {
+          ...prev,
+          ...updatedUserData,
+          id: updatedUserData.id || updatedUserData._id || prev.id,
+          createdAt: prev.createdAt
+        } : null);
+        
+        toast({
+          title: "Profile updated",
+          description: "Your profile has been successfully updated."
+        });
+      } else {
+        throw new Error(response.data.message || "Profile update failed");
+      }
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || "Profile update failed. Please try again.";
       setError(errorMessage);
+      toast({
+        title: "Update failed",
+        description: errorMessage,
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsLoading(false);
@@ -222,15 +276,27 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     setError(null);
     
     try {
+      // Here you would normally make an API call to update the subscription
+      // But for now we'll just update the local state
       if (user) {
         setUser({ 
           ...user, 
           subscriptionPlan: plan,
           subscriptionDate: new Date()
         });
+        
+        toast({
+          title: "Subscription updated",
+          description: `Your subscription has been updated to ${plan.toUpperCase()}.`
+        });
       }
-    } catch (error) {
+    } catch (error: any) {
       setError('Subscription update failed');
+      toast({
+        title: "Subscription update failed",
+        description: "There was an error updating your subscription. Please try again.",
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsLoading(false);

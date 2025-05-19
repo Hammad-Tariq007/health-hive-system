@@ -1,112 +1,15 @@
 
 const Progress = require('../models/Progress');
+const User = require('../models/User');
 
-// @desc    Create a new progress entry
-// @route   POST /api/progress
-// @access  Private
-exports.createProgress = async (req, res) => {
-  try {
-    const { 
-      weight, 
-      calories, 
-      workoutsCompleted, 
-      waterIntake,
-      bodyMeasurements,
-      notes
-    } = req.body;
-    
-    // Format date to be start of day for consistent tracking
-    const date = new Date();
-    date.setHours(0, 0, 0, 0);
-
-    // Check if entry already exists for this date
-    let progress = await Progress.findOne({
-      user: req.user.id,
-      date: {
-        $gte: new Date(date),
-        $lt: new Date(date).setDate(date.getDate() + 1)
-      }
-    });
-
-    if (progress) {
-      // Update existing entry
-      progress.weight = weight || progress.weight;
-      progress.calories = calories || progress.calories;
-      progress.workoutsCompleted = workoutsCompleted || progress.workoutsCompleted;
-      progress.waterIntake = waterIntake || progress.waterIntake;
-      
-      if (bodyMeasurements) {
-        progress.bodyMeasurements = {
-          ...progress.bodyMeasurements,
-          ...bodyMeasurements
-        };
-      }
-      
-      if (notes) progress.notes = notes;
-      
-      // Handle progress photos if uploaded
-      if (req.files && req.files.length > 0) {
-        const photos = req.files.map(file => file.filename);
-        progress.photos = [...progress.photos, ...photos];
-      }
-      
-      await progress.save();
-      
-      return res.json({
-        success: true,
-        message: 'Progress entry updated',
-        progress
-      });
-    }
-
-    // Create new progress entry
-    progress = await Progress.create({
-      user: req.user.id,
-      date,
-      weight,
-      calories,
-      workoutsCompleted,
-      waterIntake,
-      bodyMeasurements,
-      notes,
-      photos: req.files ? req.files.map(file => file.filename) : []
-    });
-
-    res.status(201).json({
-      success: true,
-      progress
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'Server error', error: error.message });
-  }
-};
-
-// @desc    Get all progress entries for a user
+// @desc    Get user progress
 // @route   GET /api/progress
 // @access  Private
 exports.getProgress = async (req, res) => {
   try {
-    const { startDate, endDate } = req.query;
-    
-    // Build query object
-    const queryObject = { user: req.user.id };
-    
-    // Add date range if provided
-    if (startDate || endDate) {
-      queryObject.date = {};
-      
-      if (startDate) {
-        queryObject.date.$gte = new Date(startDate);
-      }
-      
-      if (endDate) {
-        queryObject.date.$lte = new Date(endDate);
-      }
-    }
-    
-    // Get progress entries
-    const progress = await Progress.find(queryObject).sort('-date');
+    const progress = await Progress.find({ user: req.user.id })
+      .sort('-date')
+      .populate('user', 'name email');
     
     res.json({
       success: true,
@@ -119,43 +22,67 @@ exports.getProgress = async (req, res) => {
   }
 };
 
+// @desc    Create progress entry
+// @route   POST /api/progress
+// @access  Private
+exports.createProgress = async (req, res) => {
+  try {
+    const { weight, bodyFat, measurement, notes } = req.body;
+    
+    // Handle uploaded progress photos
+    let photos = [];
+    if (req.files) {
+      photos = req.files.map(file => file.filename);
+    }
+    
+    const progressEntry = await Progress.create({
+      user: req.user.id,
+      weight: weight ? parseFloat(weight) : undefined,
+      bodyFat: bodyFat ? parseFloat(bodyFat) : undefined,
+      measurement: JSON.parse(measurement || '{}'),
+      photos,
+      notes
+    });
+    
+    res.status(201).json({
+      success: true,
+      progress: progressEntry
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
 // @desc    Update progress entry
 // @route   PUT /api/progress/:id
 // @access  Private
 exports.updateProgress = async (req, res) => {
   try {
+    const { weight, bodyFat, measurement, notes } = req.body;
+    
+    // Find progress entry
     let progress = await Progress.findById(req.params.id);
     
     if (!progress) {
       return res.status(404).json({ success: false, message: 'Progress entry not found' });
     }
     
-    // Check if entry belongs to user
-    if (progress.user.toString() !== req.user.id) {
-      return res.status(403).json({ success: false, message: 'Not authorized to update this progress entry' });
+    // Check if user owns the entry
+    if (progress.user.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(401).json({ success: false, message: 'Not authorized to update this entry' });
     }
     
-    // Update entry
-    const { weight, calories, workoutsCompleted, waterIntake, bodyMeasurements, notes } = req.body;
+    // Update fields
+    progress.weight = weight ? parseFloat(weight) : progress.weight;
+    progress.bodyFat = bodyFat ? parseFloat(bodyFat) : progress.bodyFat;
+    progress.measurement = measurement ? JSON.parse(measurement) : progress.measurement;
+    progress.notes = notes || progress.notes;
     
-    if (weight !== undefined) progress.weight = weight;
-    if (calories !== undefined) progress.calories = calories;
-    if (workoutsCompleted !== undefined) progress.workoutsCompleted = workoutsCompleted;
-    if (waterIntake !== undefined) progress.waterIntake = waterIntake;
-    
-    if (bodyMeasurements) {
-      progress.bodyMeasurements = {
-        ...progress.bodyMeasurements,
-        ...bodyMeasurements
-      };
-    }
-    
-    if (notes !== undefined) progress.notes = notes;
-    
-    // Handle progress photos if uploaded
+    // Handle uploaded progress photos
     if (req.files && req.files.length > 0) {
-      const photos = req.files.map(file => file.filename);
-      progress.photos = [...progress.photos, ...photos];
+      const newPhotos = req.files.map(file => file.filename);
+      progress.photos = [...progress.photos, ...newPhotos];
     }
     
     await progress.save();
@@ -166,12 +93,35 @@ exports.updateProgress = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Delete progress entry
+// @route   DELETE /api/progress/:id
+// @access  Private
+exports.deleteProgress = async (req, res) => {
+  try {
+    // Find progress entry
+    const progress = await Progress.findById(req.params.id);
     
-    // Handle invalid ObjectId format
-    if (error.kind === 'ObjectId') {
+    if (!progress) {
       return res.status(404).json({ success: false, message: 'Progress entry not found' });
     }
     
+    // Check if user owns the entry
+    if (progress.user.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(401).json({ success: false, message: 'Not authorized to delete this entry' });
+    }
+    
+    await Progress.findByIdAndDelete(req.params.id);
+    
+    res.json({
+      success: true,
+      message: 'Progress entry removed'
+    });
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 };

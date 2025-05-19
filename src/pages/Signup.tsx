@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,8 +20,15 @@ const Signup = () => {
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   
   const { toast } = useToast();
-  const { signup, loginWithGoogle, loginWithFacebook } = useUser();
+  const { signup, loginWithGoogle, loginWithFacebook, user } = useUser();
   const navigate = useNavigate();
+  
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
   
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {};
@@ -35,7 +42,6 @@ const Signup = () => {
       newErrors.email = "Please enter a valid email address";
     }
     
-    // Make password validation less strict for better user experience
     if (password.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
     }
@@ -93,7 +99,7 @@ const Signup = () => {
   };
   
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="flex min-h-screen bg-white dark:bg-gray-950 py-12 px-4 sm:px-6 lg:px-8 items-center justify-center">
       <motion.div 
         className="w-full max-w-md"
         initial={{ opacity: 0, y: 20 }}
@@ -111,15 +117,15 @@ const Signup = () => {
           </Link>
         </div>
         
-        <Card className="border-2 overflow-hidden">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">Create an account</CardTitle>
-            <CardDescription className="text-center">
+        <Card className="border-0 shadow-lg dark:shadow-none dark:bg-gray-900 overflow-hidden">
+          <CardHeader className="space-y-1 pb-6">
+            <CardTitle className="text-3xl font-bold text-center">Create Account</CardTitle>
+            <CardDescription className="text-center text-lg">
               Enter your information to create your account
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
               <FormInput
                 label="Full Name"
                 id="name"
@@ -129,17 +135,19 @@ const Signup = () => {
                 onChange={e => setName(e.target.value)}
                 error={errors.name}
                 required
+                className="rounded-xl border-gray-300 h-12 text-base"
               />
               
               <FormInput
                 label="Email"
                 id="email"
                 type="email"
-                placeholder="m@example.com"
+                placeholder="your@email.com"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 error={errors.email}
                 required
+                className="rounded-xl border-gray-300 h-12 text-base"
               />
               
               <FormInput
@@ -152,6 +160,7 @@ const Signup = () => {
                 error={errors.password}
                 description="Password must be at least 6 characters."
                 required
+                className="rounded-xl border-gray-300 h-12 text-base"
               />
               
               <div className="flex items-center space-x-2">
@@ -182,7 +191,7 @@ const Signup = () => {
               
               <Button 
                 type="submit" 
-                className="w-full bg-fitness-primary hover:bg-fitness-secondary" 
+                className="w-full h-12 text-base rounded-xl bg-fitness-primary hover:bg-fitness-secondary" 
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -191,45 +200,47 @@ const Signup = () => {
                     Creating account...
                   </>
                 ) : (
-                  "Create account"
+                  "Create Account"
                 )}
               </Button>
             </form>
             
-            <div className="relative my-6">
+            <div className="relative my-8">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t"></div>
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                <span className="bg-card px-4 text-muted-foreground">Or continue with</span>
               </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
               <Button 
                 variant="outline" 
-                className="w-full"
+                className="h-12 rounded-xl border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                 onClick={handleGoogleSignup}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-google mr-2" viewBox="0 0 16 16">
-                  <path d="M15.545 6.558a9.42 9.42 0 0 1 .139 1.626c0 2.434-.87 4.492-2.384 5.885h.002C11.978 15.292 10.158 16 8 16A8 8 0 1 1 8 0a7.689 7.689 0 0 1 5.352 2.082l-2.284 2.284A4.347 4.347 0 0 0 8 3.166c-2.087 0-3.86 1.408-4.492 3.304a4.792 4.792 0 0 0 0 3.063h.003c.635 1.893 2.405 3.301 4.492 3.301 1.078 0 2.004-.276 2.722-.764h-.003a3.702 3.702 0 0 0 1.599-2.431H8v-3.08h7.545z" />
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                  <path d="M15.5 8.5c1 0 1.5-.5 2.5-1 .5 1 1 2.5 1 4 0 3.5-2 6-5.5 6S8 15 8 11.5c0-2 1-4 2-5"></path>
+                  <path d="M12 8.5V3"></path>
+                  <circle cx="12" cy="11.5" r="2.5"></circle>
                 </svg>
                 Google
               </Button>
               <Button 
                 variant="outline" 
-                className="w-full"
+                className="h-12 rounded-xl border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                 onClick={handleFacebookSignup}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-facebook mr-2" viewBox="0 0 16 16">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" className="bi bi-facebook mr-2" viewBox="0 0 16 16">
                   <path d="M16 8.049c0-4.446-3.582-8.05-8-8.05C3.58 0-.002 3.603-.002 8.05c0 4.017 2.926 7.347 6.75 7.951v-5.625h-2.03V8.05H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98h-1.009c-.993 0-1.303.621-1.303 1.258v1.51h2.218l-.354 2.326H9.25V16c3.824-.604 6.75-3.934 6.75-7.951z" />
                 </svg>
                 Facebook
               </Button>
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col">
-            <p className="text-center text-sm text-gray-500">
+          <CardFooter className="flex flex-col pt-0">
+            <p className="text-center text-base mt-4">
               Already have an account?{" "}
               <Link to="/login" className="font-medium text-fitness-primary hover:text-fitness-secondary">
                 Sign in

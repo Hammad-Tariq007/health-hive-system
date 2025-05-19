@@ -1,594 +1,532 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { CalendarIcon, TrendingUp, Droplets, Dumbbell } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import { progressAPI } from '@/api';
-import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/contexts/UserContext';
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/contexts/UserContext";
+import { LineChart, BarChart, Dumbbell, Calendar, Camera } from "lucide-react";
+import { progressAPI } from "@/api";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useNavigate } from "react-router-dom";
+import {
+  ResponsiveContainer,
+  LineChart as RechartsLineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend
+} from "recharts";
 
-interface ProgressData {
+interface ProgressEntry {
   _id: string;
   date: string;
-  weight?: number;
-  calories?: number;
-  workoutsCompleted?: number;
-  waterIntake?: number;
+  weight: number;
+  bodyFat?: number;
+  measurement?: {
+    chest?: number;
+    waist?: number;
+    hips?: number;
+    thighs?: number;
+    arms?: number;
+  };
   notes?: string;
   photos?: string[];
 }
 
-const ProgressPage = () => {
-  const [date, setDate] = useState<Date | undefined>(new Date());
-  const [trackingType, setTrackingType] = useState("weight");
-  const [weight, setWeight] = useState<string>("");
-  const [calories, setCalories] = useState<string>("");
-  const [water, setWater] = useState<string>("");
-  const [workoutsCompleted, setWorkoutsCompleted] = useState<string>("");
-  const [open, setOpen] = useState(false);
-  const [progressData, setProgressData] = useState<ProgressData[]>([]);
+const Progress = () => {
+  const [activeTab, setActiveTab] = useState("weight");
+  const [progressData, setProgressData] = useState<ProgressEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [weight, setWeight] = useState("");
+  const [bodyFat, setBodyFat] = useState("");
+  const [notes, setNotes] = useState("");
+  const [chest, setChest] = useState("");
+  const [waist, setWaist] = useState("");
+  const [hips, setHips] = useState("");
+  const [thighs, setThighs] = useState("");
+  const [arms, setArms] = useState("");
+  const [photos, setPhotos] = useState<FileList | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const { toast } = useToast();
   const { user } = useUser();
+  const navigate = useNavigate();
   
   useEffect(() => {
-    const fetchProgressData = async () => {
-      if (!user) return;
-      
-      try {
-        setIsLoading(true);
-        const response = await progressAPI.getProgress();
-        setProgressData(response.data.progress);
-      } catch (error) {
-        console.error("Failed to fetch progress data:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load progress data. Please try again.",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    if (!user && !isLoading) {
+      toast({
+        title: "Access denied",
+        description: "Please log in to view your progress",
+        variant: "destructive"
+      });
+      navigate('/login');
+      return;
+    }
     
     fetchProgressData();
-  }, [user, toast]);
+  }, [user, navigate, toast]);
+  
+  const fetchProgressData = async () => {
+    try {
+      setIsLoading(true);
+      const response = await progressAPI.getUserProgress();
+      
+      if (response.data.success) {
+        // Sort by date, newest first
+        const sortedData = response.data.progress.sort((a: any, b: any) => {
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
+        });
+        
+        setProgressData(sortedData);
+      } else {
+        toast({
+          title: "Error loading progress data",
+          description: response.data.message || "Failed to load your progress data",
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      console.error("Failed to fetch progress data:", error);
+      toast({
+        title: "Error loading progress data",
+        description: "Failed to load your progress data. Please try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user || !date) return;
+    if (!weight && !bodyFat && !chest && !waist && !hips && !thighs && !arms) {
+      toast({
+        title: "Missing information",
+        description: "Please enter at least one measurement",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
     
     try {
       const formData = new FormData();
       
-      if (trackingType === "weight" && weight) {
-        formData.append('weight', weight);
+      if (weight) formData.append("weight", weight);
+      if (bodyFat) formData.append("bodyFat", bodyFat);
+      if (notes) formData.append("notes", notes);
+      
+      const measurement: any = {};
+      if (chest) measurement.chest = parseFloat(chest);
+      if (waist) measurement.waist = parseFloat(waist);
+      if (hips) measurement.hips = parseFloat(hips);
+      if (thighs) measurement.thighs = parseFloat(thighs);
+      if (arms) measurement.arms = parseFloat(arms);
+      
+      if (Object.keys(measurement).length > 0) {
+        formData.append("measurement", JSON.stringify(measurement));
       }
       
-      if (trackingType === "calories" && calories) {
-        formData.append('calories', calories);
+      // Add photos if selected
+      if (photos) {
+        for (let i = 0; i < photos.length; i++) {
+          formData.append('photos', photos[i]);
+        }
       }
-      
-      if (trackingType === "water" && water) {
-        formData.append('waterIntake', water);
-      }
-      
-      if (trackingType === "workouts" && workoutsCompleted) {
-        formData.append('workoutsCompleted', workoutsCompleted);
-      }
-      
-      // Format date to ISO string for backend
-      formData.append('date', date.toISOString());
       
       const response = await progressAPI.createProgress(formData);
       
-      // Add new entry to state
-      setProgressData([response.data.progress, ...progressData]);
-      
-      // Reset form and close dialog
-      setOpen(false);
-      setWeight("");
-      setCalories("");
-      setWater("");
-      setWorkoutsCompleted("");
-      
+      if (response.data.success) {
+        toast({
+          title: "Progress recorded",
+          description: "Your progress has been successfully recorded",
+        });
+        
+        // Reset form
+        setWeight("");
+        setBodyFat("");
+        setNotes("");
+        setChest("");
+        setWaist("");
+        setHips("");
+        setThighs("");
+        setArms("");
+        setPhotos(null);
+        
+        // Refresh data
+        fetchProgressData();
+      } else {
+        throw new Error(response.data.message || "Failed to record progress");
+      }
+    } catch (error: any) {
+      console.error("Failed to submit progress:", error);
       toast({
-        title: "Progress Updated",
-        description: "Your progress has been successfully recorded.",
-      });
-    } catch (error) {
-      console.error("Failed to save progress:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save progress. Please try again.",
+        title: "Error recording progress",
+        description: error.message || "Failed to record your progress. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
-  // Process data for charts
-  const weightData = progressData
-    .filter(entry => entry.weight)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .map(entry => ({
-      date: new Date(entry.date).toLocaleDateString(),
-      weight: entry.weight
-    }));
-
-  const caloriesData = progressData
-    .filter(entry => entry.calories)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .map(entry => ({
-      date: new Date(entry.date).toLocaleDateString(),
-      calories: entry.calories
-    }));
-    
-  const waterData = progressData
-    .filter(entry => entry.waterIntake)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .map(entry => ({
-      date: new Date(entry.date).toLocaleDateString(),
-      water: entry.waterIntake
-    }));
-
-  // Calculate current stats
-  const currentWeight = weightData.length > 0 ? weightData[weightData.length - 1].weight : 0;
-  const previousWeight = weightData.length > 1 ? weightData[weightData.length - 2].weight : currentWeight;
-  const weightChange = currentWeight - previousWeight;
   
-  const weeklyCalories = caloriesData
-    .slice(-7)
-    .reduce((sum, entry) => sum + (entry.calories || 0), 0);
+  // Transform data for charts
+  const getChartData = () => {
+    // Reverse to show oldest to newest
+    return [...progressData].reverse().map(entry => {
+      const date = new Date(entry.date).toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric' 
+      });
+      
+      return {
+        date,
+        weight: entry.weight,
+        bodyFat: entry.bodyFat,
+        chest: entry.measurement?.chest,
+        waist: entry.measurement?.waist,
+        hips: entry.measurement?.hips,
+        thighs: entry.measurement?.thighs,
+        arms: entry.measurement?.arms
+      };
+    });
+  };
+  
+  const chartData = getChartData();
+  
+  const renderChart = () => {
+    if (chartData.length === 0) {
+      return (
+        <div className="h-64 flex items-center justify-center">
+          <p className="text-muted-foreground">No data available. Start tracking your progress!</p>
+        </div>
+      );
+    }
     
-  const workoutConsistency = progressData
-    .filter(entry => entry.workoutsCompleted && entry.workoutsCompleted > 0)
-    .length / (progressData.length || 1) * 100;
-    
-  const latestWaterIntake = waterData.length > 0 ? waterData[waterData.length - 1].water : 0;
-  const waterGoal = 80; // 80oz daily goal
-  const waterPercentage = Math.min((latestWaterIntake / waterGoal) * 100, 100);
-
-  if (isLoading) {
-    return (
-      <div className="container py-8 flex justify-center items-center min-h-[60vh]">
-        <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full"></div>
-      </div>
-    );
-  }
-
+    switch (activeTab) {
+      case "weight":
+        return (
+          <ResponsiveContainer width="100%" height={400}>
+            <RechartsLineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="weight" stroke="#9b87f5" activeDot={{ r: 8 }} />
+              {chartData.some(item => item.bodyFat !== undefined) && (
+                <Line type="monotone" dataKey="bodyFat" stroke="#FF7A72" />
+              )}
+            </RechartsLineChart>
+          </ResponsiveContainer>
+        );
+      case "measurements":
+        return (
+          <ResponsiveContainer width="100%" height={400}>
+            <RechartsLineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              {chartData.some(item => item.chest !== undefined) && (
+                <Line type="monotone" dataKey="chest" stroke="#4FC4F4" />
+              )}
+              {chartData.some(item => item.waist !== undefined) && (
+                <Line type="monotone" dataKey="waist" stroke="#9b87f5" />
+              )}
+              {chartData.some(item => item.hips !== undefined) && (
+                <Line type="monotone" dataKey="hips" stroke="#FF7A72" />
+              )}
+              {chartData.some(item => item.thighs !== undefined) && (
+                <Line type="monotone" dataKey="thighs" stroke="#82ca9d" />
+              )}
+              {chartData.some(item => item.arms !== undefined) && (
+                <Line type="monotone" dataKey="arms" stroke="#ffc658" />
+              )}
+            </RechartsLineChart>
+          </ResponsiveContainer>
+        );
+      default:
+        return null;
+    }
+  };
+  
   return (
-    <div className="container py-8 space-y-8 animate-fade-in">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Progress Tracking</h1>
-          <p className="text-muted-foreground">Monitor your fitness journey with detailed metrics</p>
+    <div className="container py-12 mx-auto">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="text-center mb-12"
+      >
+        <h1 className="text-4xl font-bold tracking-tight mb-2">Track Your Progress</h1>
+        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          Monitor your fitness journey and see how far you've come. Record measurements, upload photos, and track changes over time.
+        </p>
+      </motion.div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <Card className="border-0 shadow-lg dark:shadow-none dark:bg-gray-900">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-2xl">Progress Charts</CardTitle>
+              <CardDescription>
+                Visualize your progress over time. Switch between different metrics to see your improvements.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="weight" value={activeTab} onValueChange={setActiveTab}>
+                <div className="mb-6">
+                  <TabsList className="grid grid-cols-2 gap-4 w-full max-w-sm">
+                    <TabsTrigger value="weight" className="data-[state=active]:bg-fitness-primary data-[state=active]:text-white">
+                      <LineChart className="h-4 w-4 mr-2" />
+                      Weight & Body Fat
+                    </TabsTrigger>
+                    <TabsTrigger value="measurements" className="data-[state=active]:bg-fitness-primary data-[state=active]:text-white">
+                      <Dumbbell className="h-4 w-4 mr-2" />
+                      Body Measurements
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
+                
+                {isLoading ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-[400px] w-full" />
+                  </div>
+                ) : (
+                  <div className="h-[400px]">
+                    {renderChart()}
+                  </div>
+                )}
+              </Tabs>
+            </CardContent>
+          </Card>
+          
+          {/* History */}
+          <Card className="border-0 shadow-lg dark:shadow-none dark:bg-gray-900 mt-8">
+            <CardHeader>
+              <CardTitle className="text-2xl">Progress History</CardTitle>
+              <CardDescription>
+                Review your past entries and see how far you've come.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center space-x-4">
+                      <Skeleton className="h-12 w-12 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-[200px]" />
+                        <Skeleton className="h-4 w-[300px]" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : progressData.length > 0 ? (
+                <div className="space-y-6">
+                  {progressData.slice(0, 5).map((entry) => (
+                    <div key={entry._id} className="flex items-start border-b pb-4">
+                      <div className="bg-fitness-primary/10 rounded-xl p-3 mr-4">
+                        <Calendar className="h-6 w-6 text-fitness-primary" />
+                      </div>
+                      <div className="flex-grow">
+                        <div className="font-medium">
+                          {new Date(entry.date).toLocaleDateString('en-US', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </div>
+                        <div className="text-sm text-muted-foreground mt-1 flex flex-wrap gap-x-4">
+                          {entry.weight && <span>Weight: {entry.weight} kg</span>}
+                          {entry.bodyFat && <span>Body Fat: {entry.bodyFat}%</span>}
+                          {entry.measurement?.waist && <span>Waist: {entry.measurement.waist} cm</span>}
+                        </div>
+                        {entry.notes && (
+                          <div className="text-sm mt-2 text-muted-foreground italic">
+                            "{entry.notes}"
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center py-6 text-muted-foreground">
+                  No progress entries found. Start tracking your progress by adding new entries.
+                </p>
+              )}
+            </CardContent>
+          </Card>
         </div>
         
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <TrendingUp className="h-4 w-4" /> Log Progress
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Log Your Progress</DialogTitle>
-              <DialogDescription>
-                Keep track of your fitness journey by logging your stats regularly.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <form onSubmit={handleSubmit} className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="track-date">Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !date && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {date ? format(date, "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={date}
-                      onSelect={setDate}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>What are you tracking?</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button 
-                    type="button"
-                    variant={trackingType === "weight" ? "default" : "outline"} 
-                    className="w-full"
-                    onClick={() => setTrackingType("weight")}
-                  >
-                    Weight
-                  </Button>
-                  <Button 
-                    type="button"
-                    variant={trackingType === "calories" ? "default" : "outline"} 
-                    className="w-full"
-                    onClick={() => setTrackingType("calories")}
-                  >
-                    Calories
-                  </Button>
-                  <Button 
-                    type="button"
-                    variant={trackingType === "water" ? "default" : "outline"} 
-                    className="w-full"
-                    onClick={() => setTrackingType("water")}
-                  >
-                    Water
-                  </Button>
-                  <Button 
-                    type="button"
-                    variant={trackingType === "workouts" ? "default" : "outline"} 
-                    className="w-full"
-                    onClick={() => setTrackingType("workouts")}
-                  >
-                    Workouts
-                  </Button>
-                </div>
-              </div>
-              
-              {trackingType === "weight" && (
-                <div className="space-y-2">
-                  <Label htmlFor="weight">Weight (lbs)</Label>
-                  <Input 
-                    id="weight"
-                    type="number"
-                    placeholder="Enter your weight"
-                    value={weight}
-                    onChange={(e) => setWeight(e.target.value)}
-                  />
-                </div>
-              )}
-              
-              {trackingType === "calories" && (
-                <div className="space-y-2">
-                  <Label htmlFor="calories">Calories Burned</Label>
-                  <Input 
-                    id="calories"
-                    type="number"
-                    placeholder="Enter calories burned"
-                    value={calories}
-                    onChange={(e) => setCalories(e.target.value)}
-                  />
-                </div>
-              )}
-              
-              {trackingType === "water" && (
-                <div className="space-y-2">
-                  <Label htmlFor="water">Water Intake (oz)</Label>
-                  <Input 
-                    id="water"
-                    type="number"
-                    placeholder="Enter water intake"
-                    value={water}
-                    onChange={(e) => setWater(e.target.value)}
-                  />
-                </div>
-              )}
-              
-              {trackingType === "workouts" && (
-                <div className="space-y-2">
-                  <Label htmlFor="workouts">Workouts Completed</Label>
-                  <Input 
-                    id="workouts"
-                    type="number"
-                    placeholder="Enter number of workouts"
-                    value={workoutsCompleted}
-                    onChange={(e) => setWorkoutsCompleted(e.target.value)}
-                  />
-                </div>
-              )}
-              
-              <DialogFooter>
-                <Button type="submit">Save Progress</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Current Weight</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{currentWeight || 0} lbs</div>
-            <p className="text-xs text-muted-foreground">
-              {weightChange !== 0 ? 
-                `${weightChange > 0 ? '+' : ''}${weightChange} lbs from last entry` : 
-                'No previous entries to compare'
-              }
-            </p>
-            <Progress 
-              value={currentWeight ? 80 : 0} 
-              className="mt-2" 
-            />
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Calories Burned (Week)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{weeklyCalories || 0} kcal</div>
-            <p className="text-xs text-muted-foreground">
-              {caloriesData.length > 0 ? 'From the last 7 days' : 'No data recorded yet'}
-            </p>
-            <Progress 
-              value={weeklyCalories ? Math.min(weeklyCalories / 30, 100) : 0} 
-              className="mt-2" 
-            />
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Workout Consistency</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {workoutConsistency ? Math.round(workoutConsistency) : 0}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {progressData.length > 0 ? 'Based on your tracking history' : 'No workouts logged yet'}
-            </p>
-            <Progress value={workoutConsistency || 0} className="mt-2" />
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Water Intake (Today)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{latestWaterIntake || 0} oz</div>
-            <p className="text-xs text-muted-foreground">
-              {waterPercentage ? `${Math.round(waterPercentage)}% of daily goal` : 'No intake tracked yet'}
-            </p>
-            <Progress value={waterPercentage || 0} className="mt-2" />
-          </CardContent>
-        </Card>
-      </div>
-      
-      <Tabs defaultValue="weight" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-3">
-          <TabsTrigger value="weight">Weight</TabsTrigger>
-          <TabsTrigger value="calories">Calories</TabsTrigger>
-          <TabsTrigger value="water">Water</TabsTrigger>
-        </TabsList>
-        <TabsContent value="weight" className="space-y-4">
-          <Card>
+        <div>
+          <Card className="border-0 shadow-lg dark:shadow-none dark:bg-gray-900">
             <CardHeader>
-              <CardTitle>Weight Tracking</CardTitle>
+              <CardTitle className="text-2xl">Record New Progress</CardTitle>
               <CardDescription>
-                Your weight progress over time
+                Add your latest measurements and track your improvement over time.
               </CardDescription>
             </CardHeader>
-            <CardContent className="h-[300px]">
-              {weightData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={weightData}
-                    margin={{
-                      top: 5,
-                      right: 30,
-                      left: 20,
-                      bottom: 5,
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="weight" 
-                      name="Weight (lbs)"
-                      stroke="#9b87f5" 
-                      strokeWidth={2}
-                      dot={{ r: 4 }}
-                      activeDot={{ r: 8 }}
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="weight">Weight (kg)</Label>
+                    <Input
+                      id="weight"
+                      type="number"
+                      step="0.1"
+                      placeholder="e.g., 70.5"
+                      value={weight}
+                      onChange={(e) => setWeight(e.target.value)}
+                      className="h-12 rounded-xl"
                     />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-full flex items-center justify-center">
-                  <p className="text-muted-foreground">
-                    No weight data recorded yet. Log your weight to see progress.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="calories" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Calories Burned</CardTitle>
-              <CardDescription>
-                Track your calorie expenditure
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="h-[300px]">
-              {caloriesData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={caloriesData}
-                    margin={{
-                      top: 5,
-                      right: 30,
-                      left: 20,
-                      bottom: 5,
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="calories"
-                      name="Calories (kcal)" 
-                      stroke="#7E69AB" 
-                      strokeWidth={2}
-                      dot={{ r: 4 }}
-                      activeDot={{ r: 8 }}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bodyFat">Body Fat %</Label>
+                    <Input
+                      id="bodyFat"
+                      type="number"
+                      step="0.1"
+                      placeholder="e.g., 20.5"
+                      value={bodyFat}
+                      onChange={(e) => setBodyFat(e.target.value)}
+                      className="h-12 rounded-xl"
                     />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-full flex items-center justify-center">
-                  <p className="text-muted-foreground">
-                    No calorie data recorded yet. Log your calories to see progress.
-                  </p>
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="water" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Water Intake</CardTitle>
-              <CardDescription>
-                Track your daily hydration
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="h-[300px]">
-              {waterData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={waterData}
-                    margin={{
-                      top: 5,
-                      right: 30,
-                      left: 20,
-                      bottom: 5,
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="water"
-                      name="Water (oz)" 
-                      stroke="#3b82f6" 
-                      strokeWidth={2}
-                      dot={{ r: 4 }}
-                      activeDot={{ r: 8 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-full flex items-center justify-center flex-col">
-                  <Droplets className="h-24 w-24 text-blue-400 mx-auto mb-4" />
-                  <p className="text-muted-foreground">
-                    No water intake recorded yet. Log your hydration to see progress.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Workout Consistency</CardTitle>
-            <CardDescription>Your weekly workout streak</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-7 gap-2">
-              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => {
-                // Example logic to check if workout was done on this day
-                // This would need to be replaced with actual data
-                const hasWorkout = i < 5; // Sample static data
                 
-                return (
-                  <div key={i} className="flex flex-col items-center">
-                    <div className="text-sm text-muted-foreground">{day}</div>
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${hasWorkout ? 'bg-primary text-white' : 'bg-muted'}`}>
-                      {hasWorkout ? <Dumbbell className="h-5 w-5" /> : ''}
+                <div className="pt-4">
+                  <h3 className="font-medium mb-2">Body Measurements (cm)</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="chest">Chest</Label>
+                      <Input
+                        id="chest"
+                        type="number"
+                        step="0.1"
+                        placeholder="Chest"
+                        value={chest}
+                        onChange={(e) => setChest(e.target.value)}
+                        className="h-12 rounded-xl"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="waist">Waist</Label>
+                      <Input
+                        id="waist"
+                        type="number"
+                        step="0.1"
+                        placeholder="Waist"
+                        value={waist}
+                        onChange={(e) => setWaist(e.target.value)}
+                        className="h-12 rounded-xl"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="hips">Hips</Label>
+                      <Input
+                        id="hips"
+                        type="number"
+                        step="0.1"
+                        placeholder="Hips"
+                        value={hips}
+                        onChange={(e) => setHips(e.target.value)}
+                        className="h-12 rounded-xl"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="thighs">Thighs</Label>
+                      <Input
+                        id="thighs"
+                        type="number"
+                        step="0.1"
+                        placeholder="Thighs"
+                        value={thighs}
+                        onChange={(e) => setThighs(e.target.value)}
+                        className="h-12 rounded-xl"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="arms">Arms</Label>
+                      <Input
+                        id="arms"
+                        type="number"
+                        step="0.1"
+                        placeholder="Arms"
+                        value={arms}
+                        onChange={(e) => setArms(e.target.value)}
+                        className="h-12 rounded-xl"
+                      />
                     </div>
                   </div>
-                );
-              })}
-            </div>
-            <div className="mt-4 text-center text-sm text-muted-foreground">
-              You've completed 5/7 workouts this week
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Body Stats</CardTitle>
-            <CardDescription>Track your body measurements</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Body Fat</p>
-                <p className="text-lg font-semibold">18%</p>
-                <Progress value={65} className="h-2" />
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Muscle Mass</p>
-                <p className="text-lg font-semibold">42%</p>
-                <Progress value={75} className="h-2" />
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">BMI</p>
-                <p className="text-lg font-semibold">23.5</p>
-                <Progress value={70} className="h-2" />
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Waist</p>
-                <p className="text-lg font-semibold">32"</p>
-                <Progress value={60} className="h-2" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                </div>
+                
+                <div className="space-y-2 pt-2">
+                  <Label htmlFor="notes">Notes</Label>
+                  <Input
+                    id="notes"
+                    placeholder="Optional notes about your progress"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className="h-12 rounded-xl"
+                  />
+                </div>
+                
+                <div className="space-y-2 pt-2">
+                  <Label htmlFor="photos" className="flex items-center gap-2">
+                    <Camera className="h-4 w-4" />
+                    Progress Photos (Optional)
+                  </Label>
+                  <Input
+                    id="photos"
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={(e) => setPhotos(e.target.files)}
+                    className="h-12 rounded-xl"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Upload up to 5 photos to document your progress
+                  </p>
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full h-12 text-base rounded-xl bg-fitness-primary hover:bg-fitness-secondary mt-4" 
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Saving...
+                    </span>
+                  ) : (
+                    "Save Progress"
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
 };
 
-export default ProgressPage;
+export default Progress;
